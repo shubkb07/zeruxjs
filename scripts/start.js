@@ -26,9 +26,9 @@ if (!fs.existsSync('/.dockerenv')) {
     const { execSync } = require('child_process');
     try {
         console.log('Ensuring Docker container is running...');
-        execSync('docker-compose up -d', { stdio: 'inherit' });
+        execSync('docker compose up -d', { stdio: 'inherit' });
     } catch (e) {
-        console.log('Failed to start Docker container or docker-compose not available.');
+        console.log('Failed to start Docker container or docker compose not available.');
     }
 }
 

@@ -1,5 +1,6 @@
 services:
   zerux-dev-env:
+    image: zeruxjs-dev-env
     build:
       context: .
       dockerfile: .dev-container/Dockerfile.dev

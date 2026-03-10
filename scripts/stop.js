@@ -47,7 +47,7 @@ if (!targetName) {
     if (!fs.existsSync('/.dockerenv')) {
         console.log('Stopping Docker container...');
         try {
-            execSync('docker-compose down', { stdio: 'inherit' });
+            execSync('docker compose down', { stdio: 'inherit' });
         } catch (e) {
             console.log('Failed to stop Docker container.');
         }

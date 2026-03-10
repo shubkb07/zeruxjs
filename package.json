@@ -18,7 +18,7 @@
         "docker:stop": "docker exec -it zerux-dev-env npm run env:stop",
         "docker:list": "docker exec -it zerux-dev-env npm run env:list",
         "docker:restart": "docker exec -it zerux-dev-env npm run env:restart",
-        "docker:remove": "docker-compose down -v --rmi all && rm -rf ./.dev-container/docker"
+        "docker:remove": "docker compose down -v --rmi all && rm -rf ./.dev-container/docker"
     },
     "workspaces": [
         "packages/@zeruxjs/*",

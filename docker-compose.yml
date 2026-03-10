@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   zerux-dev-env:
     build:
@@ -9,6 +7,8 @@ services:
     volumes:
       # map entire root directory (where docker-compose.yml is present) as ubuntu drive
       - .:/workspace
+      # store container's root system files (like .npm caches) easily visible and removable
+      - ./.dev-container/docker/root:/root
     working_dir: /workspace
     ports:
       - "3000-3100:3000-3100"

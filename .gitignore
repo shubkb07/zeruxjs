@@ -1,3 +1,10 @@
+# ZeruxJS
+
+# Zerux Development
+/.dev-container/docker
+/.dev-container/.env-state.json
+/.dev-container/log
+
 # VS Code
 .vscode
 

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const STATE_FILE = path.join(__dirname, '../.env-state.json');
+const STATE_FILE = path.join(__dirname, '../.dev-container/.env-state.json');
 
 function getFolders(dirsToScan, scriptName, ignorePrivate = false) {
     const targets = [];
@@ -15,7 +15,7 @@ function getFolders(dirsToScan, scriptName, ignorePrivate = false) {
 
                 const fullPath = path.join(dir, entry.name);
                 const pkgPath = path.join(fullPath, 'package.json');
-                
+
                 if (fs.existsSync(pkgPath)) {
                     try {
                         const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
@@ -27,7 +27,7 @@ function getFolders(dirsToScan, scriptName, ignorePrivate = false) {
                                 pkgName: pkg.name || entry.name
                             });
                         }
-                    } catch(e) {}
+                    } catch (e) { }
                 } else {
                     scan(fullPath, depth + 1);
                 }
@@ -48,7 +48,7 @@ function readState() {
     if (fs.existsSync(STATE_FILE)) {
         try {
             return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
-        } catch (e) {}
+        } catch (e) { }
     }
     return { type: null, processes: [] };
 }

@@ -1,9 +1,10 @@
 import { startAppServer } from "../server/app-server.js";
 import { startDevServer } from "../server/dev-server.js";
-import { startWatcher } from "../compiler/watcher.js";
+import { startWatcher } from "@zeruxjs/watcher";
 
 export async function startDev() {
     const rootDir = process.cwd();
+    console.log(rootDir);
 
     try {
         const ts = await import("@zeruxjs/typescript");

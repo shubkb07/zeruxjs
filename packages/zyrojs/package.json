@@ -1,0 +1,12 @@
+{
+    "name": "zyrojs",
+    "version": "1.0.0",
+    "description": "A CLI tool for ZeruxJS",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "@zeruxjs/core": "*"
+    }
+}

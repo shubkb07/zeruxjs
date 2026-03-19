@@ -1,7 +1,7 @@
 {
   "name": "@zeruxjs/lint",
   "version": "1.0.0",
-  "description": "Lint support for ZeruxJS",
+  "description": "Lint JS, cSS and all files",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,5 +27,16 @@
     "stylelint-config-standard-scss": "^17.0.0",
     "typescript-eslint": "^8.57.0"
   },
-  "license": "MIT"
+  "license": "(MIT AND Apache-2.0)",
+  "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
+  "bugs": {
+    "url": "https://github.com/zeruxjs/zeruxjs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeruxjs/zeruxjs.git"
+  },
+  "keywords": [
+    "Lint JS, cSS and all files"
+  ]
 }

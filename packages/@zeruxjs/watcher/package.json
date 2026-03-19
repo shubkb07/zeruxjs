@@ -1,18 +1,29 @@
 {
-    "name": "@zeruxjs/watcher",
-    "version": "1.0.0",
-    "description": "Watcher support for ZeruxJS",
-    "author": "",
-    "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "zerux": "./cli.js",
-    "scripts": {
-        "build": "tsc",
-        "dev": "tsc --watch"
-    },
-    "exports": {
-        ".": "./dist/index.js"
-    },
-    "license": "MIT"
+  "name": "@zeruxjs/watcher",
+  "version": "1.0.0",
+  "description": "File Change Watcher, Optize for multiple watcher together by sharing events",
+  "author": "",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "zerux": "./cli.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "license": "(MIT AND Apache-2.0)",
+  "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
+  "bugs": {
+    "url": "https://github.com/zeruxjs/zeruxjs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeruxjs/zeruxjs.git"
+  },
+  "keywords": [
+    "File Change Watcher, Optize for multiple watcher together by sharing events"
+  ]
 }

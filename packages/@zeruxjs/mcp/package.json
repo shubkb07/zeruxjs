@@ -1,0 +1,23 @@
+{
+  "name": "@zeruxjs/mcp",
+  "version": "1.0.0",
+  "description": "MCP Connection Helper for AI and Stuff",
+  "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
+  "bugs": {
+    "url": "https://github.com/zeruxjs/zeruxjs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeruxjs/zeruxjs.git"
+  },
+  "license": "(MIT AND Apache-2.0)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "MCP Connection Helper for AI and Stuff"
+  ]
+}

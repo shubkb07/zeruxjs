@@ -1,20 +1,31 @@
 {
-    "name": "@zeruxjs/server",
-    "version": "1.0.0",
-    "description": "ZeruxJS Server Helper",
-    "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "scripts": {
-        "build": "tsc",
-        "dev": "tsc --watch"
-    },
-    "exports": {
-        ".": "./dist/index.js"
-    },
-    "license": "MIT",
-    "dependencies": {
-        "@zeruxjs/watcher": "*",
-        "ws": "^8.19.0"
-    }
+  "name": "@zeruxjs/server",
+  "version": "1.0.0",
+  "description": "Server Creator and Handle Auto load and so via @zerux/watcher",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "license": "(MIT AND Apache-2.0)",
+  "dependencies": {
+    "@zeruxjs/watcher": "*",
+    "ws": "^8.19.0"
+  },
+  "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
+  "bugs": {
+    "url": "https://github.com/zeruxjs/zeruxjs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeruxjs/zeruxjs.git"
+  },
+  "keywords": [
+    "Server Creator and Handle Auto load and so via @zerux/watcher"
+  ]
 }

@@ -1,0 +1,23 @@
+{
+  "name": "@zeruxjs/media",
+  "version": "1.0.0",
+  "description": "Download and Upload Media, Making them enter only in non-executable area, Download Manager, expiry function and more.",
+  "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
+  "bugs": {
+    "url": "https://github.com/zeruxjs/zeruxjs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeruxjs/zeruxjs.git"
+  },
+  "license": "(MIT AND Apache-2.0)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "Download and Upload Media, Making them enter only in non-executable area, Download Manager, expiry function and more."
+  ]
+}

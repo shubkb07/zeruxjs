@@ -1,7 +1,7 @@
 {
   "name": "@zeruxjs/typescript",
   "version": "1.0.0",
-  "description": "TypeScript support for ZeruxJS",
+  "description": "Typescript Support",
   "author": "",
   "type": "module",
   "main": "./dist/index.js",
@@ -13,11 +13,22 @@
   "exports": {
     ".": "./dist/index.js"
   },
-  "license": "MIT",
+  "license": "(MIT AND Apache-2.0)",
   "dependencies": {
     "@types/node": "^25.4.0",
     "@types/ws": "^8.18.1",
     "esbuild": "^0.27.3",
     "typescript": "^5.9.3"
-  }
+  },
+  "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
+  "bugs": {
+    "url": "https://github.com/zeruxjs/zeruxjs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeruxjs/zeruxjs.git"
+  },
+  "keywords": [
+    "Typescript Support"
+  ]
 }

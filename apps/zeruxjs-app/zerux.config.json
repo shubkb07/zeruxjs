@@ -1,3 +1,17 @@
 {
-    "$schema": ""
+    "$schema": "https://raw.githubusercontent.com/zeruxjs/zeruxjs/refs/heads/master/packages/@zeruxjs/core/assets/json/schema.config.json",
+    "type": "fix",
+    "database": { // defination database settings
+        "connections": [ // defination database connections type array that contain objects
+            {
+                "name": "Something", // "A-Za-z0-9 _-" // can have space // defination name of connetor
+                "slug": "something", // A-Za-z0-9_-  // no space, required // slug - at which connecter available
+                "connecter": "package name to use, like for mongodb @zerux/mongo, for pgsql @zerux/pg and so, set can be same as acceptable of an package name, like can only have one / and other rules", // required
+                "options": { // required, as there must be a connecter, must have one key value, can be any thing, but value must be "A-z0-9_", // defination key is keys for package to connect, value is environment names that have value to key
+                    "key1": "key 1 value",
+                    "key2": "key 2 value"
+                }
+            }
+        ]
+    }
 }

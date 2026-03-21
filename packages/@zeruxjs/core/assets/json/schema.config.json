@@ -6,6 +6,11 @@
         "$schema": {
             "type": "string"
         },
+        "apiVersion": {
+            "description": "Schema supported version",
+            "type": "integer",
+            "const": 1
+        },
         "type": {
             "description": "How Framework will load Files",
             "type": "string",
@@ -15,12 +20,63 @@
                 "user-define",
                 "function"
             ]
+        },
+        "database": {
+            "description": "Database Settings",
+            "type": "object",
+            "properties": {
+                "connections": {
+                    "type": "array",
+                    "description": "List of database connections",
+                    "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "name",
+                            "slug",
+                            "connecter",
+                            "options"
+                        ],
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Human readable connection name",
+                                "pattern": "^[A-Za-z0-9 _-]+$",
+                                "minLength": 1,
+                                "maxLength": 100
+                            },
+                            "slug": {
+                                "type": "string",
+                                "description": "Unique identifier for connection (no spaces)",
+                                "pattern": "^[A-Za-z0-9_-]+$",
+                                "minLength": 1,
+                                "maxLength": 100
+                            },
+                            "connecter": {
+                                "type": "string",
+                                "description": "NPM package name of database connector",
+                                "pattern": "^(?:@[a-z0-9-~][a-z0-9-._~]*\\/)?[a-z0-9-~][a-z0-9-._~]*$",
+                                "minLength": 1,
+                                "maxLength": 214
+                            },
+                            "options": {
+                                "type": "object",
+                                "description": "Connector configuration mapping (env keys)",
+                                "minProperties": 1,
+                                "additionalProperties": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z0-9_]+$"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "required": [
-        "apiVersion",
-        "name",
-        "title"
+        "apiVersion"
     ],
     "additionalProperties": false
 }

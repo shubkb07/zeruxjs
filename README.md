@@ -60,7 +60,15 @@ If you discover a security vulnerability within ZeruxJS, please refer to our [Se
 
 ## 📝 License
 
-This project is licensed under both:
+This project is dual-licensed under:
 
 - [MIT License](LICENSE-MIT)
 - [Apache License, Version 2.0](LICENSE-APACHE)
+
+You may choose either license for your use.
+
+## Third-Party Dependencies
+
+| Dependency | Version | License | Source | Used In |
+|-----------|--------|--------|--------|--------|
+| Poerless | 0.7.1 | Apache 2.0 | https://github.com/vercel-labs/portless | @zerux/server |

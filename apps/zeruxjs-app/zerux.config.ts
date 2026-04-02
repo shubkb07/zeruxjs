@@ -1,5 +1,6 @@
-{
-    "$schema": "../../packages/@zeruxjs/core/assets/json/schema.config.json",
+import type { ZeruxConfig } from '@zeruxjs/core'
+
+const zeruxConfig: ZeruxConfig = {
     "apiVersion": 1,
     "type": "fix",
     "database": {
@@ -17,3 +18,5 @@
         ]
     }
 }
+
+export default zeruxConfig;

@@ -2,8 +2,36 @@ import { startServer } from "@zeruxjs/server";
 import fs from "fs";
 import path from "path";
 
-export const server = async (mode: 'dev' | 'start' = 'start', args: { namedArgs: any, positionalArgs: any }) => {
+const getConfig = async (mode: 'dev' | 'start' = 'start') => {
     const rootDir = process.cwd();
+
+    // Get Configuration.
+    let config: any = {};
+    for (const ext of [".ts", ".js", ".mjs"]) {
+        const configPath = path.join(rootDir, `zerux.config${ext}`);
+        if (fs.existsSync(configPath)) {
+            try {
+                if (ext === ".json") {
+                    config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+                } else {
+                    const cacheBuster = mode === 'dev' ? `?t=${Date.now()}` : '';
+                    console.log(`file://${configPath}${cacheBuster}`);
+                    const mod = await import(`file://${configPath}${cacheBuster}`);
+                    config = mod.default || mod.zeruxConfig || mod;
+                }
+                break;
+            } catch (err: any) {
+                console.error(`[zerux] Error loading ${configPath}:`, err.message);
+            }
+        }
+    }
+    return config;
+}
+
+export const server = async (mode: 'dev' | 'start' = 'start', args: { namedArgs: any, positionalArgs: any }, options: any) => {
+    const rootDir = process.cwd();
+
+    const config = await getConfig(mode);
     const packageJsonPath = path.join(rootDir, "package.json");
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
     const projectName = packageJson.name;
@@ -28,6 +56,7 @@ export const server = async (mode: 'dev' | 'start' = 'start', args: { namedArgs:
 
     const details: any = {
         service: projectName,
+        config: config,
         app: {
             name: projectName,
             port: args.namedArgs?.p || args.namedArgs?.port ? parseInt(args.namedArgs.p || args.namedArgs.port) : undefined,

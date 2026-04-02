@@ -16,7 +16,7 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "license": "(MIT AND Apache-2.0)",
+  "license": "(MIT OR Apache-2.0)",
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

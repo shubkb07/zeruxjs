@@ -16,7 +16,7 @@
     ".": "./dist/index.js",
     "./schema/schema.config.json": "./assets/json/schema.config.json"
   },
-  "license": "(MIT AND Apache-2.0)",
+  "license": "(MIT OR Apache-2.0)",
   "dependencies": {
     "@zeruxjs/hooks": "*"
   },

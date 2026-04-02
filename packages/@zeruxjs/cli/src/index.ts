@@ -42,6 +42,7 @@ class ZeruxCLI {
     private command: string | undefined;
     private args: string[];
     private parsedArgs: ParsedArgs;
+    private hasExecutedCommand = false;
 
     constructor() {
         const [, , command, ...args] = process.argv;
@@ -239,6 +240,8 @@ class ZeruxCLI {
             }
 
             if (!ZeruxCLI.isRea && !opts.rea) {
+                if (this.hasExecutedCommand) return;
+                this.hasExecutedCommand = true;
                 (async () => {
                     await this.loadPlugins();
 
@@ -285,6 +288,9 @@ class ZeruxCLI {
             this.error(`Unknown command "${this.command}"`);
             process.exit(1);
         }
+
+        if (this.hasExecutedCommand) return;
+        this.hasExecutedCommand = true;
 
         await cmd.handler(this.parsedArgs);
         process.exit(0);

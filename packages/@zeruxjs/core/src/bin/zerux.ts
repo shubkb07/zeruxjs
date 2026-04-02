@@ -27,7 +27,7 @@ const addCommands = () => {
     cli.addCommand(
         "zerux",
         "start",
-        async () => {
+        async (args) => {
             registerLoader();
             await server('start', args);
         },

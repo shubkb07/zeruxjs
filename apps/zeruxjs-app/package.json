@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "ZeruxJS Sample Application",
   "author": "Shubham Kumar Bansal",
-  "type": "commonjs",
+  "type": "module",
   "main": "index.js",
   "dependencies": {
     "@zeruxjs/core": "*",

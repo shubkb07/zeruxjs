@@ -170,7 +170,7 @@ export const startServer = async (details: any) => {
         devInfo = await ensureSharedDev(appName, details.dev.port);
 
         if (devInfo.isFirst) {
-            const server = http.createServer();
+            const server = details.dev.func ? http.createServer(details.dev.func) : http.createServer();
             new WebSocketServer({ server });
 
             await new Promise<void>((r) =>

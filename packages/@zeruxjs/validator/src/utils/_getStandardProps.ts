@@ -24,7 +24,7 @@ export function _getStandardProps<
 >(context: TSchema): StandardProps<InferInput<TSchema>, InferOutput<TSchema>> {
   return {
     version: 1,
-    vendor: 'valibot',
+    vendor: '@zeruxjs/validator',
     validate(value) {
       return context['~run']({ value }, getGlobalConfig()) as
         | StandardResult<InferOutput<TSchema>>

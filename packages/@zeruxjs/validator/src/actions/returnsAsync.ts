@@ -6,7 +6,7 @@ import type {
   InferOutput,
   SuccessDataset,
 } from '../types/index.js';
-import { ValiError } from '../utils/index.js';
+import { ValidationError } from '../utils/index.js';
 
 /**
  * Returns action async type.
@@ -75,7 +75,7 @@ export function returnsAsync(
           config
         );
         if (returnsDataset.issues) {
-          throw new ValiError(returnsDataset.issues);
+          throw new ValidationError(returnsDataset.issues);
         }
         return returnsDataset.value;
       };

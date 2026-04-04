@@ -1,5 +1,5 @@
 import type { BaseIssue, BaseSchema, InferInput } from '../types/index.js';
-import { ValiError } from '../utils/index.js';
+import { ValidationError } from '../utils/index.js';
 
 /**
  * Checks if the input matches the schema. As this is an assertion function, it
@@ -13,6 +13,6 @@ export function assert<
 >(schema: TSchema, input: unknown): asserts input is InferInput<TSchema> {
   const issues = schema['~run']({ value: input }, { abortEarly: true }).issues;
   if (issues) {
-    throw new ValiError(issues);
+    throw new ValidationError(issues);
   }
 }

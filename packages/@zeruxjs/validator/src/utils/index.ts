@@ -14,5 +14,5 @@ export * from './entriesFromObjects.js';
 export * from './getDotPath.js';
 export * from './isOfKind.js';
 export * from './isOfType.js';
-export * from './isValiError.js';
-export * from './ValiError.js';
+export * from './isValidationError.js';
+export * from './ValidationError.js';

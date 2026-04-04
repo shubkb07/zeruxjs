@@ -9,7 +9,7 @@ export interface StandardProps<TInput, TOutput> {
   /**
    * The vendor name of the schema library.
    */
-  readonly vendor: 'valibot';
+  readonly vendor: '@zeruxjs/validator';
   /**
    * Validates unknown input values.
    */

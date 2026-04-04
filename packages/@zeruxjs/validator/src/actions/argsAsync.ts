@@ -23,7 +23,7 @@ import type {
   TupleItems,
   TupleItemsAsync,
 } from '../types/index.js';
-import { ValiError } from '../utils/index.js';
+import { ValidationError } from '../utils/index.js';
 
 /**
  * Schema type.
@@ -107,7 +107,7 @@ export function argsAsync(
       dataset.value = async (...args) => {
         const argsDataset = await schema['~run']({ value: args }, config);
         if (argsDataset.issues) {
-          throw new ValiError(argsDataset.issues);
+          throw new ValidationError(argsDataset.issues);
         }
         return func(...argsDataset.value);
       };

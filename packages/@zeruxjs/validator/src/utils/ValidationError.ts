@@ -6,9 +6,9 @@ import type {
 } from '../types/index.js';
 
 /**
- * A Valibot error with useful information.
+ * A error with useful information.
  */
-export class ValiError<
+export class ValidationError<
   TSchema extends
   | BaseSchema<unknown, unknown, BaseIssue<unknown>>
   | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
@@ -19,14 +19,14 @@ export class ValiError<
   public readonly issues: [InferIssue<TSchema>, ...InferIssue<TSchema>[]];
 
   /**
-   * Creates a Valibot error with useful information.
+   * Creates a error with useful information.
    *
    * @param issues The error issues.
    */
   // @__NO_SIDE_EFFECTS__
   constructor(issues: [InferIssue<TSchema>, ...InferIssue<TSchema>[]]) {
     super(issues[0].message);
-    this.name = 'ValiError';
+    this.name = 'ValidationError';
     this.issues = issues;
   }
 }

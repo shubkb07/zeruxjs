@@ -16,7 +16,7 @@ import type {
   InferInput,
   TupleItems,
 } from '../types/index.js';
-import { ValiError } from '../utils/index.js';
+import { ValidationError } from '../utils/index.js';
 
 /**
  * Schema type.
@@ -85,7 +85,7 @@ export function args(
       dataset.value = (...args_) => {
         const argsDataset = this.schema['~run']({ value: args_ }, config);
         if (argsDataset.issues) {
-          throw new ValiError(argsDataset.issues);
+          throw new ValidationError(argsDataset.issues);
         }
         return func(...argsDataset.value);
       };

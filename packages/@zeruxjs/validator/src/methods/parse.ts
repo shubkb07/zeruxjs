@@ -6,7 +6,7 @@ import type {
   InferIssue,
   InferOutput,
 } from '../types/index.js';
-import { ValiError } from '../utils/index.js';
+import { ValidationError } from '../utils/index.js';
 
 /**
  * Parses an unknown input based on a schema.
@@ -26,7 +26,7 @@ export function parse<
 ): InferOutput<TSchema> {
   const dataset = schema['~run']({ value: input }, getGlobalConfig(config));
   if (dataset.issues) {
-    throw new ValiError(dataset.issues);
+    throw new ValidationError(dataset.issues);
   }
   return dataset.value;
 }

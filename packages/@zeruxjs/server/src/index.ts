@@ -2,22 +2,246 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import net from "node:net";
-import os from "node:os";
 import process from "node:process";
-import { WebSocketServer } from "ws";
 import { startWatcher } from "@zeruxjs/watcher";
+import { WebSocketServer, WebSocket } from "ws";
+import {
+    closeSharedDevServer,
+    ensureSharedDevServer,
+    getDevtoolsServerChannelHandler,
+    injectDevClient,
+    isPrimaryHtmlRequest,
+    publishSharedDevEvent,
+    registerSharedDevApp,
+    resolveSharedDevModuleSocketRequest,
+    setSharedDevEventBroadcaster,
+    unregisterSharedDevApp
+} from "@zeruxjs/dev";
 
 import {
     portlessProxy,
     portlessAlias,
+    portlessGet,
     portlessStop
 } from "./portless.js";
 
-/* ---------------- PATHS ---------------- */
-
-const SHARED_DEV_FILE = path.join(os.tmpdir(), "zerux-dev.json");
-
 /* ---------------- UTIL ---------------- */
+
+let sharedDevWebSocketServer: WebSocketServer | null = null;
+let sharedDevWebSocketHttpServer: http.Server | null = null;
+
+const ensureSharedDevSockets = (server: http.Server) => {
+    if (sharedDevWebSocketServer && sharedDevWebSocketHttpServer === server) {
+        return sharedDevWebSocketServer;
+    }
+
+    if (sharedDevWebSocketServer) {
+        sharedDevWebSocketServer.close();
+    }
+
+    sharedDevWebSocketServer = new WebSocketServer({ noServer: true });
+    sharedDevWebSocketHttpServer = server;
+
+    server.on("upgrade", (req, socket, head) => {
+        const requestUrl = new URL(req.url || "/", "http://127.0.0.1");
+        if (requestUrl.pathname !== "/__zerux/ws") {
+            socket.destroy();
+            return;
+        }
+
+        sharedDevWebSocketServer!.handleUpgrade(req, socket, head, (ws) => {
+            (ws as WebSocket & { appName?: string }).appName = requestUrl.searchParams.get("app") ?? undefined;
+            (ws as WebSocket & { identifier?: string }).identifier = requestUrl.searchParams.get("identifier") ?? undefined;
+            (ws as WebSocket & { clientType?: string }).clientType = requestUrl.searchParams.get("client") ?? undefined;
+            (ws as WebSocket & { moduleId?: string }).moduleId = requestUrl.searchParams.get("moduleId") ?? undefined;
+            sharedDevWebSocketServer!.emit("connection", ws, req);
+        });
+    });
+
+    sharedDevWebSocketServer.on("connection", (ws) => {
+        ws.on("message", async (raw) => {
+            try {
+                const message = JSON.parse(String(raw));
+                if (message?.type !== "channel" || typeof message.channel !== "string") return;
+
+                const appName = (ws as WebSocket & { appName?: string }).appName;
+                const identifier = (ws as WebSocket & { identifier?: string }).identifier;
+                const clientType = (ws as WebSocket & { clientType?: string }).clientType;
+                const boundModuleId = (ws as WebSocket & { moduleId?: string }).moduleId;
+
+                if (message.channelType === "server") {
+                    if (!appName) return;
+
+                    let data: unknown = null;
+                    const targetModuleId = typeof message.moduleId === "string" ? message.moduleId : boundModuleId;
+                    if (targetModuleId) {
+                        data = await resolveSharedDevModuleSocketRequest({
+                            appName,
+                            moduleId: targetModuleId,
+                            channel: message.channel,
+                            payload: message.payload,
+                            identifier,
+                            clientType,
+                            requesterModuleId: typeof message.requesterModuleId === "string"
+                                ? message.requesterModuleId
+                                : boundModuleId
+                        });
+                    } else {
+                        const handler = getDevtoolsServerChannelHandler(message.channel);
+                        if (!handler) return;
+                        data = await handler(message.payload, {
+                            app: appName,
+                            identifier,
+                            clientType
+                        });
+                    }
+
+                    ws.send(JSON.stringify({
+                        type: "server-channel",
+                        channel: message.channel,
+                        moduleId: targetModuleId,
+                        identifier,
+                        payload: data ?? null
+                    }));
+                    return;
+                }
+
+                if (message.channelType === "peer" && appName) {
+                    for (const client of sharedDevWebSocketServer!.clients) {
+                        if (client.readyState !== WebSocket.OPEN || client === ws) continue;
+                        const targetApp = (client as WebSocket & { appName?: string }).appName;
+                        const targetIdentifier = (client as WebSocket & { identifier?: string }).identifier;
+                        const targetModuleId = (client as WebSocket & { moduleId?: string }).moduleId;
+                        if (targetApp !== appName) continue;
+                        if (identifier && targetIdentifier && identifier !== targetIdentifier) continue;
+                        if (typeof message.targetModuleId === "string" && targetModuleId !== message.targetModuleId) continue;
+                        if (typeof message.moduleId === "string" && targetModuleId && targetModuleId !== message.moduleId) continue;
+                        client.send(JSON.stringify({
+                            type: "peer-channel",
+                            channel: message.channel,
+                            moduleId: typeof message.moduleId === "string" ? message.moduleId : boundModuleId,
+                            identifier,
+                            payload: message.payload ?? null
+                        }));
+                    }
+                }
+            } catch {
+                return;
+            }
+        });
+    });
+
+    server.on("close", () => {
+        if (sharedDevWebSocketHttpServer === server) {
+            sharedDevWebSocketServer?.close();
+            sharedDevWebSocketServer = null;
+            sharedDevWebSocketHttpServer = null;
+            setSharedDevEventBroadcaster(null);
+        }
+    });
+
+    setSharedDevEventBroadcaster((appName, event) => {
+        if (!sharedDevWebSocketServer) return;
+
+        for (const client of sharedDevWebSocketServer.clients) {
+            if (client.readyState !== WebSocket.OPEN) continue;
+
+            const targetApp = (client as WebSocket & { appName?: string }).appName;
+            if (targetApp && targetApp !== appName) continue;
+
+            const targetIdentifier = (client as WebSocket & { identifier?: string }).identifier;
+            const eventIdentifier = typeof event.payload?.identifier === "string"
+                ? event.payload.identifier
+                : undefined;
+            if (event.type === "client-event" && targetIdentifier && eventIdentifier && targetIdentifier !== eventIdentifier) {
+                continue;
+            }
+
+            client.send(JSON.stringify(event));
+        }
+    });
+
+    return sharedDevWebSocketServer;
+};
+
+const createInjectedAppHandler = (
+    handler: (req: any, res: any) => Promise<void>,
+    options: { routeName: string; devServerUrl: string }
+) => {
+    return async (req: any, res: any) => {
+        if (!isPrimaryHtmlRequest(req)) {
+            await handler(req, res);
+            return;
+        }
+
+        const chunks: Buffer[] = [];
+        let intercepted = false;
+        let statusCode = 200;
+        const headers = new Map<string, string | number | readonly string[]>();
+
+        const originalWriteHead = res.writeHead.bind(res);
+        const originalWrite = res.write.bind(res);
+        const originalEnd = res.end.bind(res);
+        const originalSetHeader = res.setHeader.bind(res);
+
+        res.setHeader = ((name: string, value: string | number | readonly string[]) => {
+            headers.set(name.toLowerCase(), value);
+            return originalSetHeader(name, value);
+        }) as typeof res.setHeader;
+
+        res.writeHead = ((code: number, ...args: any[]) => {
+            statusCode = code;
+            const [reasonOrHeaders, maybeHeaders] = args;
+            const headHeaders = (typeof reasonOrHeaders === "string" ? maybeHeaders : reasonOrHeaders) ?? {};
+            for (const [key, value] of Object.entries(headHeaders)) {
+                headers.set(key.toLowerCase(), value as string | number | readonly string[]);
+            }
+            return res;
+        }) as typeof res.writeHead;
+
+        res.write = ((chunk: any, encoding?: any, callback?: any) => {
+            intercepted = true;
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding));
+            if (typeof callback === "function") callback();
+            return true;
+        }) as typeof res.write;
+
+        res.end = ((chunk?: any, encoding?: any, callback?: any) => {
+            if (chunk !== undefined && chunk !== null) {
+                intercepted = true;
+                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding));
+            }
+
+            const contentType = String(headers.get("content-type") || "");
+            if (!intercepted || !contentType.includes("text/html")) {
+                if (typeof callback === "function") callback();
+                return originalEnd(chunk, encoding);
+            }
+
+            const html = Buffer.concat(chunks).toString("utf8");
+            const transformed = injectDevClient(html, {
+                routeName: options.routeName,
+                devServerUrl: options.devServerUrl
+            });
+
+            res.setHeader = originalSetHeader;
+            res.writeHead = originalWriteHead;
+            res.write = originalWrite;
+            res.end = originalEnd;
+
+            for (const [key, value] of headers.entries()) {
+                if (key === "content-length") continue;
+                originalSetHeader(key, value as any);
+            }
+
+            originalSetHeader("content-length", Buffer.byteLength(transformed, "utf8"));
+            res.statusCode = statusCode;
+            return originalEnd(transformed, "utf8", callback);
+        }) as typeof res.end;
+
+        await handler(req, res);
+    };
+};
 
 const isPortFree = (port: number) =>
     new Promise<boolean>((resolve) => {
@@ -77,60 +301,6 @@ const removeSerDetails = (file: string, type: string) => {
     writeJSON(file, data);
 };
 
-/* ---------------- SHARED DEV ---------------- */
-
-const ensureSharedDev = async (appName: string, port?: number) => {
-    let data = readJSON(SHARED_DEV_FILE);
-    if (!Array.isArray(data.services)) {
-        data.services = [];
-    }
-
-    if (!data.port) {
-        const p = port ? await findPort(port) : await findPort(9000);
-        data = { port: p, services: [] };
-    }
-
-    const names = data.services.map((s: any) => s.name);
-
-    let final = appName;
-    let i = 1;
-
-    while (names.includes(final) || final === "zdev") {
-        final = `${appName}-${i++}`;
-    }
-
-    data.services.push({ name: final });
-
-    writeJSON(SHARED_DEV_FILE, data);
-
-    return {
-        port: data.port,
-        name: final,
-        isFirst: data.services.length === 1
-    };
-};
-
-const removeSharedDev = (name: string) => {
-    if (!fs.existsSync(SHARED_DEV_FILE)) {
-        return false;
-    }
-
-    const data = readJSON(SHARED_DEV_FILE);
-    const services = Array.isArray(data.services) ? data.services : [];
-
-    data.services = services.filter((s: any) => s.name !== name);
-
-    if (data.services.length === 0) {
-        if (fs.existsSync(SHARED_DEV_FILE)) {
-            fs.unlinkSync(SHARED_DEV_FILE);
-        }
-        return true;
-    }
-
-    writeJSON(SHARED_DEV_FILE, data);
-    return false;
-};
-
 /* ---------------- MAIN ---------------- */
 
 export const startServer = async (details: any) => {
@@ -146,7 +316,7 @@ export const startServer = async (details: any) => {
 
     /* ---------------- PROXY ---------------- */
 
-    await portlessProxy(1355, { https: true });
+    await portlessProxy(undefined, { https: true });
 
     /* ---------------- APP ---------------- */
 
@@ -158,51 +328,62 @@ export const startServer = async (details: any) => {
             : (() => { throw new Error("Port busy"); })()
         : await findPort(3000);
 
-    let appServer = http.createServer(details.app.func);
-
-    await new Promise<void>((r) => appServer.listen(appPort, r));
-
-    const appAlias = await portlessAlias(appName, appPort);
-
-    const appUrls = [
-        `http://127.0.0.1:${appPort}`,
-        ...(appAlias ? [`https://${appName}.localhost`] : [])
-    ];
-
-    addSerDetails(serviceFile, "app", appUrls);
-
-    /* ---------------- DEV ---------------- */
-
-    let devInfo: any = null;
+    let devInfo: Awaited<ReturnType<typeof registerSharedDevApp>> | null = null;
     let devAlias = false;
 
     if (details.dev) {
-        devInfo = await ensureSharedDev(appName, details.dev.port);
-
-        if (devInfo.isFirst) {
-            const server = details.dev.func ? http.createServer(details.dev.func) : http.createServer();
-            new WebSocketServer({ server });
-
-            await new Promise<void>((r) =>
-                server.listen(devInfo.port, r)
-            );
+        devInfo = await registerSharedDevApp({
+            appName,
+            appPort,
+            rootDir: root,
+            preferredPort: details.dev.port,
+            dataFilePath: details.dev.dataFilePath,
+            logFilePath: details.dev.logFilePath,
+            runtimeManifestPath: details.dev.runtimeManifestPath
+        });
+        const sharedDevHandle = await ensureSharedDevServer(devInfo.port);
+        if (sharedDevHandle) {
+            ensureSharedDevSockets(sharedDevHandle.server);
         }
 
         devAlias = await portlessAlias("zdev", devInfo.port);
 
+        const devAliasBase = devAlias ? await portlessGet("zdev") : false;
         const devUrls = [
-            `http://127.0.0.1:${devInfo.port}/${devInfo.name}`,
-            `ws://127.0.0.1:${devInfo.port}/${devInfo.name}`,
-            ...(devAlias
+            devInfo.urls.devtools,
+            devInfo.urls.websocket,
+            ...(devAliasBase
                 ? [
-                    `https://zdev.localhost/${devInfo.name}`,
-                    `wss://zdev.localhost/${devInfo.name}`
+                    `${devAliasBase}/${devInfo.routeName}`,
+                    `${String(devAliasBase).replace(/^http/, "ws")}/__zerux/ws?app=${encodeURIComponent(devInfo.routeName)}`,
                 ]
                 : [])
         ];
 
         addSerDetails(serviceFile, "dev", devUrls);
     }
+
+    let appRequestHandler = details.app.func;
+    if (devInfo) {
+        appRequestHandler = createInjectedAppHandler(details.app.func, {
+            routeName: devInfo.routeName,
+            devServerUrl: devInfo.urls.devtools
+        });
+    }
+
+    let appServer = http.createServer(appRequestHandler);
+
+    await new Promise<void>((r) => appServer.listen(appPort, r));
+
+    const appAlias = await portlessAlias(appName, appPort);
+
+    const appAliasUrl = appAlias ? await portlessGet(appName) : false;
+    const appUrls = [
+        `http://127.0.0.1:${appPort}`,
+        ...(appAliasUrl ? [appAliasUrl] : [])
+    ];
+
+    addSerDetails(serviceFile, "app", appUrls);
 
     /* ---------------- LOG ---------------- */
 
@@ -235,12 +416,23 @@ export const startServer = async (details: any) => {
             );
 
             await details.dev.watchFunc(event.file);
+            const sharedDevHandle = await ensureSharedDevServer(devInfo?.port);
+            if (sharedDevHandle) {
+                ensureSharedDevSockets(sharedDevHandle.server);
+            }
 
             if (!(await isPortFree(appPort))) {
                 throw new Error("Port locked");
             }
 
-            appServer = http.createServer(details.app.func);
+            appRequestHandler = devInfo
+                ? createInjectedAppHandler(details.app.func, {
+                    routeName: devInfo.routeName,
+                    devServerUrl: devInfo.urls.devtools
+                })
+                : details.app.func;
+
+            appServer = http.createServer(appRequestHandler);
 
             await new Promise<void>((r) =>
                 appServer.listen(appPort, r)
@@ -249,6 +441,17 @@ export const startServer = async (details: any) => {
             console.log(
                 `App server restarted at ${appUrls.join(", ")}`
             );
+
+            if (devInfo) {
+                await publishSharedDevEvent(devInfo.port, {
+                    app: devInfo.routeName,
+                    type: "reload",
+                    payload: {
+                        file: event.file ?? null,
+                        appUrls
+                    }
+                });
+            }
         });
     }
 
@@ -264,8 +467,11 @@ export const startServer = async (details: any) => {
         removeSerDetails(serviceFile, "dev");
 
         if (devInfo) {
-            const last = removeSharedDev(devInfo.name);
-            if (last) portlessStop();
+            const last = unregisterSharedDevApp(root);
+            if (last) {
+                void closeSharedDevServer();
+                portlessStop();
+            }
         }
     };
 

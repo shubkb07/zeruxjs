@@ -91,7 +91,7 @@ export default () => `<!DOCTYPE html>
         padding: 22px;
         border-radius: 20px;
         background: rgba(255,255,255,0.78);
-        border: 1px solid rgba(29,36,51,0.06);
+        border: 1px solid rgba(29,36,51,0.06);;
       }
 
       .card strong {
@@ -136,7 +136,7 @@ export default () => `<!DOCTYPE html>
       <section class="shell">
         <div class="hero">
           <div class="eyebrow">ZeruxJS Runtime</div>
-          <h1>Framework boot path is live.</h1>
+          <h1>Framework boot path is live. Yes</h1>
           <p>
             This page is served from <code>app/page.ts</code> through the new core bootstrap.
             Middleware, controllers, composables, plugins, generated manifests, and app routing

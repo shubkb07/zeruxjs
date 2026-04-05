@@ -20,12 +20,23 @@ export interface ZeruxServerConfig {
     devPort?: number;
 }
 
+export interface ZeruxDevtoolsModuleConfig {
+    package: string;
+    enabled?: boolean;
+    options?: Record<string, unknown>;
+}
+
+export interface ZeruxDevtoolsConfig {
+    modules?: Array<string | ZeruxDevtoolsModuleConfig>;
+}
+
 export interface ZeruxConfig {
     type?: "fix" | "dynamic" | "function";
     entryPoint?: string;
     outDir?: string;
     structure?: ZeruxStructureConfig;
     server?: ZeruxServerConfig;
+    devtools?: ZeruxDevtoolsConfig;
     database?: {
         default?: string;
         connections?: DatabaseConnection[];

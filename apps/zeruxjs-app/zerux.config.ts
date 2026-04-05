@@ -2,6 +2,11 @@ import type { ZeruxConfig } from '@zeruxjs/core'
 
 const zeruxConfig: ZeruxConfig = {
     "type": "fix",
+    "devtools": {
+        "modules": [
+            "sample-module"
+        ]
+    },
     "database": {
         "default": "something",
         "connections": [

@@ -18,6 +18,9 @@ export const isWindows = process.platform === "win32";
 /** Default proxy port. Uses an unprivileged port so sudo is not required. */
 export const DEFAULT_PROXY_PORT = 1355;
 
+/** Preferred HTTPS proxy port for clean localhost URLs. */
+export const DEFAULT_HTTPS_PROXY_PORT = 443;
+
 /** Ports below this threshold require root/sudo to bind (Unix only). */
 export const PRIVILEGED_PORT_THRESHOLD = 1024;
 

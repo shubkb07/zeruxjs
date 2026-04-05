@@ -17,6 +17,16 @@
     "build": "tsc",
     "dev": "tsc --watch"
   },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "type": "module",
+  "dependencies": {
+    "@zeruxjs/security": "*"
+  },
   "keywords": [
     "Dev tools present here like mapping function and classes and all internal services"
   ]

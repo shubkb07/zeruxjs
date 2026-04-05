@@ -10,10 +10,10 @@
 // core bundle small. It can be extended or replaced by the consumer if a more
 // sophisticated logger (e.g., winston, pino) is required.
 
-import { existsSync, mkdirSync, createWriteStream, WriteStream } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { existsSync, mkdirSync, createWriteStream, WriteStream } from "node:fs";
+import { join, dirname } from "node:path";
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 interface LoggerOptions {
   /** Path to the log file. */
@@ -27,7 +27,7 @@ interface LoggerOptions {
  */
 function format(level: LogLevel, message: string, ...args: unknown[]): string {
   const timestamp = new Date().toISOString();
-  const extra = args.length ? ` ${JSON.stringify(args)}` : '';
+  const extra = args.length ? ` ${JSON.stringify(args)}` : "";
   return `[${timestamp}] [${level.toUpperCase()}] ${message}${extra}\n`;
 }
 
@@ -41,9 +41,9 @@ export class Logger {
 
   constructor(options: LoggerOptions = {}) {
     // Resolve log file location
-    const defaultPath = join(process.cwd(), 'logs', 'app.log');
+    const defaultPath = join(process.cwd(), ".zerux", "log", "app.log");
     this.filePath = options.filePath ?? process.env.ZERUX_LOG_PATH ?? defaultPath;
-    this.fileLevel = options.fileLevel ?? 'debug';
+    this.fileLevel = options.fileLevel ?? "debug";
 
     // Ensure directory exists
     const dir = dirname(this.filePath);
@@ -62,22 +62,22 @@ export class Logger {
     // Console – colour‑coded for readability
     // eslint-disable-next-line no-console
     switch (level) {
-      case 'debug':
+      case "debug":
         console.debug(entry.trim());
         break;
-      case 'info':
+      case "info":
         console.info(entry.trim());
         break;
-      case 'warn':
+      case "warn":
         console.warn(entry.trim());
         break;
-      case 'error':
+      case "error":
         console.error(entry.trim());
         break;
     }
 
     // File – respect the configured minimum level
-    const levels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+    const levels: LogLevel[] = ["debug", "info", "warn", "error"];
     if (this.stream && levels.indexOf(level) >= levels.indexOf(this.fileLevel)) {
       this.stream.write(entry);
     }
@@ -85,22 +85,26 @@ export class Logger {
 
   /** Log a debug message. */
   debug(message: string, ...args: unknown[]): void {
-    this.write('debug', message, ...args);
+    this.write("debug", message, ...args);
   }
 
   /** Log an informational message. */
   info(message: string, ...args: unknown[]): void {
-    this.write('info', message, ...args);
+    this.write("info", message, ...args);
   }
 
   /** Log a warning. */
   warn(message: string, ...args: unknown[]): void {
-    this.write('warn', message, ...args);
+    this.write("warn", message, ...args);
   }
 
   /** Log an error. */
   error(message: string, ...args: unknown[]): void {
-    this.write('error', message, ...args);
+    this.write("error", message, ...args);
+  }
+
+  getFilePath(): string {
+    return this.filePath;
   }
 
   /** Gracefully close the underlying file stream. */

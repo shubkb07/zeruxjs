@@ -1,0 +1,25 @@
+{
+  "appName": "zeruxjs-app",
+  "mode": "dev",
+  "rootDir": "/home/shubham/Dev/apps/node/ZeruxJS/apps/zeruxjs-app",
+  "manifestPath": "/home/shubham/Dev/apps/node/ZeruxJS/apps/zeruxjs-app/.zerux/runtime.json",
+  "logFilePath": "/home/shubham/Dev/apps/node/ZeruxJS/apps/zeruxjs-app/.zerux/log/app.log",
+  "loadedEnvFiles": [
+    "/home/shubham/Dev/apps/node/ZeruxJS/apps/zeruxjs-app/.env"
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "methods": [
+        "ALL"
+      ]
+    }
+  ],
+  "appPort": 3010,
+  "updatedAt": "2026-04-05T20:09:51.326Z",
+  "devtools": {
+    "modules": [
+      "sample-module"
+    ]
+  }
+}

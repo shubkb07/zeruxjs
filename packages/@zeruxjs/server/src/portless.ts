@@ -22,9 +22,11 @@ import { syncHostsFile, cleanHostsFile } from "./portless/hosts.js";
 import { FILE_MODE, RouteStore, RouteConflictError } from "./portless/routes.js";
 
 import {
+    DEFAULT_HTTPS_PROXY_PORT,
     DEFAULT_TLD,
     discoverState,
     findFreePort,
+    getDefaultPort,
     injectFrameworkFlags,
     isHttpsEnvEnabled,
     isProxyRunning,
@@ -33,6 +35,8 @@ import {
     readTldFromDir,
     resolveStateDir,
     spawnCommand,
+    writeTlsMarker,
+    writeTldFile,
 } from "./portless/cli-utils.js";
 
 import { inferProjectName, detectWorktreePrefix } from "./portless/auto.js";
@@ -53,70 +57,93 @@ export async function portlessProxy(
     }
 ): Promise<boolean> {
     try {
-        const proxyPort = port ?? 1355;
         const tld = options?.tld ?? DEFAULT_TLD;
         const useHttps = options?.https ?? isHttpsEnvEnabled();
+        const fallbackPort = port ?? getDefaultPort();
+        const candidatePorts = port
+            ? [port]
+            : useHttps
+                ? [...new Set([DEFAULT_HTTPS_PROXY_PORT, fallbackPort])]
+                : [fallbackPort];
 
-        const stateDir = resolveStateDir(proxyPort);
-        const store = new RouteStore(stateDir);
+        for (let index = 0; index < candidatePorts.length; index += 1) {
+            const proxyPort = candidatePorts[index];
+            const stateDir = resolveStateDir(proxyPort);
+            const store = new RouteStore(stateDir);
 
-        if (await isProxyRunning(proxyPort)) {
-            console.log(chalk.yellow(`${CLI_NAME}: Proxy already running on ${proxyPort}`));
-            return true;
-        }
+            if (await isProxyRunning(proxyPort, useHttps)) {
+                console.log(chalk.yellow(`${CLI_NAME}: Proxy already running on ${proxyPort}`));
+                return true;
+            }
 
-        let tlsOptions: any;
+            let tlsOptions: any;
+            if (useHttps) {
+                store.ensureDir();
 
-        if (useHttps) {
-            store.ensureDir();
+                if (options?.certPath && options?.keyPath) {
+                    tlsOptions = {
+                        cert: fs.readFileSync(options.certPath),
+                        key: fs.readFileSync(options.keyPath),
+                    };
+                } else {
+                    const certs = ensureCerts(stateDir);
 
-            if (options?.certPath && options?.keyPath) {
-                tlsOptions = {
-                    cert: fs.readFileSync(options.certPath),
-                    key: fs.readFileSync(options.keyPath),
-                };
-            } else {
-                const certs = ensureCerts(stateDir);
+                    if (!isCATrusted(stateDir)) {
+                        trustCA(stateDir);
+                    }
 
-                if (!isCATrusted(stateDir)) {
-                    trustCA(stateDir);
+                    const cert = fs.readFileSync(certs.certPath);
+                    const key = fs.readFileSync(certs.keyPath);
+
+                    tlsOptions = {
+                        cert,
+                        key,
+                        SNICallback: createSNICallback(stateDir, cert, key, tld),
+                    };
                 }
+            }
 
-                const cert = fs.readFileSync(certs.certPath);
-                const key = fs.readFileSync(certs.keyPath);
+            const server = createProxyServer({
+                getRoutes: () => store.loadRoutes(),
+                proxyPort,
+                tld,
+                onError: (msg) => console.error(chalk.red(msg)),
+                tls: tlsOptions,
+            });
 
-                tlsOptions = {
-                    cert,
-                    key,
-                    SNICallback: createSNICallback(stateDir, cert, key, tld),
-                };
+            const started = await new Promise<boolean>((resolve) => {
+                server.once("error", (err: NodeJS.ErrnoException) => {
+                    if (!port && index < candidatePorts.length - 1 && (err.code === "EACCES" || err.code === "EADDRINUSE")) {
+                        console.warn(
+                            chalk.yellow(`${CLI_NAME}: Unable to bind ${proxyPort}; falling back to ${candidatePorts[index + 1]}`)
+                        );
+                        resolve(false);
+                        return;
+                    }
+
+                    console.error(chalk.red(`${CLI_NAME}: ${err.message}`));
+                    resolve(false);
+                });
+
+                server.listen(proxyPort, () => {
+                    fs.writeFileSync(store.pidPath, process.pid.toString(), { mode: FILE_MODE });
+                    fs.writeFileSync(store.portFilePath, proxyPort.toString(), { mode: FILE_MODE });
+                    writeTlsMarker(stateDir, useHttps);
+                    writeTldFile(stateDir, tld);
+
+                    console.log(
+                        chalk.green(`${CLI_NAME}: Proxy running on ${proxyPort} (${useHttps ? "HTTPS" : "HTTP"})`)
+                    );
+                    resolve(true);
+                });
+            });
+
+            if (started) {
+                return true;
             }
         }
 
-        const server = createProxyServer({
-            getRoutes: () => store.loadRoutes(),
-            proxyPort,
-            tld,
-            onError: (msg) => console.error(chalk.red(msg)),
-            tls: tlsOptions,
-        });
-
-        return new Promise((resolve) => {
-            server.listen(proxyPort, () => {
-                fs.writeFileSync(store.pidPath, process.pid.toString(), { mode: FILE_MODE });
-                fs.writeFileSync(store.portFilePath, proxyPort.toString(), { mode: FILE_MODE });
-
-                console.log(
-                    chalk.green(`${CLI_NAME}: Proxy running on ${proxyPort} (${useHttps ? "HTTPS" : "HTTP"})`)
-                );
-                resolve(true);
-            });
-
-            server.on("error", (err) => {
-                console.error(chalk.red(`${CLI_NAME}: ${err.message}`));
-                resolve(false);
-            });
-        });
+        return false;
     } catch (err) {
         console.error(chalk.red(`${CLI_NAME}: ${err instanceof Error ? err.message : String(err)}`));
         return false;
@@ -308,16 +335,20 @@ export function portlessHosts(action: "sync" | "clean" = "sync"): boolean {
     try {
         if (action === "clean") return cleanHostsFile();
 
-        const store = new RouteStore(resolveStateDir(1355));
+        const stateDir = fs.existsSync(resolveStateDir(DEFAULT_HTTPS_PROXY_PORT))
+            ? resolveStateDir(DEFAULT_HTTPS_PROXY_PORT)
+            : resolveStateDir(getDefaultPort());
+        const store = new RouteStore(stateDir);
         return syncHostsFile(store.loadRoutes().map((r) => r.hostname));
     } catch {
         return false;
     }
 }
 
-export function portlessTrust(): boolean {
+export async function portlessTrust(): Promise<boolean> {
     try {
-        const result = trustCA(resolveStateDir(1355));
+        const { dir } = await discoverState();
+        const result = trustCA(dir);
         if (result.error) {
             console.error(chalk.red(`${CLI_NAME}: ${result.error}`));
         }

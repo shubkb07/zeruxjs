@@ -10,7 +10,17 @@ const buildInjectedClient = ({ routeName, devServerUrl }: DevClientScriptOptions
   if (window.__ZERUX_DEV_CLIENT__) return;
   window.__ZERUX_DEV_CLIENT__ = true;
   const app = ${JSON.stringify(routeName)};
-  const devServerUrl = ${JSON.stringify(devServerUrl)};
+  const loopbackDevServerUrl = ${JSON.stringify(devServerUrl)};
+  const resolveDevServerUrl = () => {
+    const host = window.location.hostname || '';
+    const isLocalAlias = host.endsWith('.localhost') && host !== 'localhost' && host !== '127.0.0.1';
+    if (!isLocalAlias) {
+      return loopbackDevServerUrl;
+    }
+    const port = window.location.port ? ':' + window.location.port : '';
+    return window.location.protocol + '//zdev.localhost' + port + '/' + app;
+  };
+  const devServerUrl = resolveDevServerUrl();
   const devServer = new URL(devServerUrl);
   const base = devServer.origin + '/' + app + '/__zerux';
   const tabIdentifierStorageKey = 'zerux:devtools:tabid:' + app;
@@ -51,24 +61,26 @@ const buildInjectedClient = ({ routeName, devServerUrl }: DevClientScriptOptions
     #zerux-dev-button,
     #zerux-dev-drawer,
     #zerux-dev-error-screen {
-      --zx-bg: rgba(7,17,29,0.94);
-      --zx-bg-soft: rgba(12,20,34,0.92);
-      --zx-panel: rgba(5,10,18,0.98);
-      --zx-text: #e8eefb;
-      --zx-muted: #8ea2c8;
-      --zx-border: rgba(120,183,255,0.22);
-      --zx-accent: #78b7ff;
+      --zx-bg: rgba(9,10,13,0.96);
+      --zx-bg-soft: rgba(17,18,23,0.94);
+      --zx-panel: rgba(7,8,11,0.985);
+      --zx-text: #edf0f5;
+      --zx-muted: #9ca5b3;
+      --zx-border: rgba(205,213,225,0.16);
+      --zx-accent: #bcc5d0;
+      --zx-warm: #c99d4d;
     }
     #zerux-dev-button[data-theme="light"],
     #zerux-dev-drawer[data-theme="light"],
     #zerux-dev-error-screen[data-theme="light"] {
       --zx-bg: rgba(255,255,255,0.96);
-      --zx-bg-soft: rgba(246,246,248,0.98);
-      --zx-panel: rgba(250,250,252,0.99);
-      --zx-text: #1a2433;
-      --zx-muted: #607089;
-      --zx-border: rgba(18,57,113,0.14);
-      --zx-accent: #0a7cff;
+      --zx-bg-soft: rgba(250,246,239,0.98);
+      --zx-panel: rgba(251,252,255,0.995);
+      --zx-text: #17202d;
+      --zx-muted: #5f6c7e;
+      --zx-border: rgba(26,58,94,0.14);
+      --zx-accent: #356d9d;
+      --zx-warm: #b88a3b;
     }
     #zerux-dev-button {
       position: fixed;
@@ -93,7 +105,7 @@ const buildInjectedClient = ({ routeName, devServerUrl }: DevClientScriptOptions
       height: 20px;
       padding: 0 6px;
       border-radius: 999px;
-      background: #ffbf69;
+      background: var(--zx-warm);
       color: #2d1600;
       font: 700 11px/20px sans-serif;
       display: none;
@@ -189,15 +201,15 @@ const buildInjectedClient = ({ routeName, devServerUrl }: DevClientScriptOptions
     #zerux-dev-error-inner {
       max-width: 1100px;
       margin: 0 auto;
-      border: 1px solid rgba(255,123,114,0.2);
+      border: 1px solid rgba(201,157,77,0.2);
       border-radius: 12px;
-      background: rgba(18, 10, 12, 0.86);
+      background: rgba(18, 16, 14, 0.88);
       box-shadow: 0 24px 90px rgba(0,0,0,0.36);
       overflow: hidden;
     }
     #zerux-dev-error-head {
       padding: 20px 24px;
-      border-bottom: 1px solid rgba(255,123,114,0.16);
+      border-bottom: 1px solid rgba(201,157,77,0.16);
     }
     #zerux-dev-error-head h2 {
       margin: 0;
@@ -215,10 +227,10 @@ const buildInjectedClient = ({ routeName, devServerUrl }: DevClientScriptOptions
       margin-top: 16px;
     }
     #zerux-dev-error-actions button {
-      border: 1px solid rgba(255,123,114,0.22);
+      border: 1px solid rgba(201,157,77,0.22);
       border-radius: 999px;
-      background: rgba(33, 14, 18, 0.96);
-      color: #f9d6d5;
+      background: rgba(31, 25, 18, 0.96);
+      color: #f4e6ca;
       padding: 9px 14px;
       cursor: pointer;
       font: 600 13px/1 sans-serif;
@@ -233,7 +245,7 @@ const buildInjectedClient = ({ routeName, devServerUrl }: DevClientScriptOptions
       padding: 16px;
       border-radius: 14px;
       background: rgba(9, 5, 6, 0.82);
-      border: 1px solid rgba(255,123,114,0.12);
+      border: 1px solid rgba(201,157,77,0.12);
       font: 500 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
       white-space: pre-wrap;
       word-break: break-word;

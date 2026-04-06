@@ -33,7 +33,20 @@ const sendBuffer = (res: ServerResponse, body: Buffer, contentType: string, stat
     res.end(body);
 };
 
-const getFrameAncestors = (appPort?: number) => {
+const normalizeAncestorOrigin = (value?: string | null) => {
+    if (!value) return null;
+    try {
+        const origin = new URL(value).origin;
+        if (origin.startsWith("http://") || origin.startsWith("https://")) {
+            return origin;
+        }
+    } catch {
+        return null;
+    }
+    return null;
+};
+
+const getFrameAncestors = (req?: IncomingMessage, appPort?: number) => {
     const ancestors = new Set<string>(["'self'"]);
     if (appPort) {
         ancestors.add(`http://127.0.0.1:${appPort}`);
@@ -41,14 +54,18 @@ const getFrameAncestors = (appPort?: number) => {
         ancestors.add(`https://127.0.0.1:${appPort}`);
         ancestors.add(`https://localhost:${appPort}`);
     }
+    const requestOrigin = normalizeAncestorOrigin(String(req?.headers.origin || ""));
+    const refererOrigin = normalizeAncestorOrigin(String(req?.headers.referer || ""));
+    if (requestOrigin) ancestors.add(requestOrigin);
+    if (refererOrigin) ancestors.add(refererOrigin);
     ancestors.add("https://*.localhost");
     return [...ancestors];
 };
 
-const buildFrameAwarePolicy = (nonce: string, appPort?: number) =>
+const buildFrameAwarePolicy = (nonce: string, req?: IncomingMessage, appPort?: number) =>
     buildContentSecurityPolicy(nonce).replace(
         "frame-ancestors 'self'",
-        `frame-ancestors ${getFrameAncestors(appPort).join(" ")}`
+        `frame-ancestors ${getFrameAncestors(req, appPort).join(" ")}`
     );
 
 const readRequestBody = async (req: IncomingMessage) =>
@@ -115,7 +132,7 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const security = createDocumentSecurity();
         const page = await renderHomePage(readRegistry().apps);
         sendHtml(res, page(security.nonce), 200, {
-            "Content-Security-Policy": buildFrameAwarePolicy(security.nonce)
+            "Content-Security-Policy": buildFrameAwarePolicy(security.nonce, req)
         });
         return;
     }
@@ -251,7 +268,7 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const security = createDocumentSecurity();
         const page = await renderApplicationPage(app, snapshot, identifier);
         sendHtml(res, page(security.nonce), 200, {
-            "Content-Security-Policy": buildFrameAwarePolicy(security.nonce, app.appPort)
+            "Content-Security-Policy": buildFrameAwarePolicy(security.nonce, req, app.appPort)
         });
         return;
     }

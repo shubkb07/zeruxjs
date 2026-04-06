@@ -8,7 +8,7 @@ import { readModuleAsset, resolveModuleApiRequest, resolveModuleSocketRequest } 
 import { readDevAsset, renderApplicationPage, renderHomePage, resolveCustomApiHandler, loadApplicationSections } from "./render.js";
 import { appendSnapshotEvent, normalizeSnapshot } from "./state.js";
 import { getRegistryApp, readRegistry, readSharedDevRouteName, registerSharedDevApp, unregisterSharedDevApp, isPortFree, findPort, writeRegistry } from "./registry.js";
-import type { SharedDevEvent, SharedDevServerHandle } from "./types.js";
+import type { SharedDevEvent, SharedDevServerHandle, SharedDevRegistration } from "./types.js";
 
 let sharedServerHandle: SharedDevServerHandle | null = null;
 let sharedDevEventBroadcaster: ((appName: string, event: SharedDevEvent) => void) | null = null;
@@ -46,14 +46,47 @@ const normalizeAncestorOrigin = (value?: string | null) => {
     return null;
 };
 
-const getFrameAncestors = (req?: IncomingMessage, appPort?: number) => {
+const isLocalHost = (host: string) => {
+    const hostname = host.split(":")[0].toLowerCase();
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname.endsWith(".localhost")) return true;
+    return false;
+};
+
+const matchWildcard = (pattern: string, host: string) => {
+    const p = pattern.toLowerCase();
+    const h = host.toLowerCase();
+    if (p === h) return true;
+    if (p.startsWith("*.")) {
+        const domain = p.slice(2);
+        return h === domain || h.endsWith(`.${domain}`);
+    }
+    return false;
+};
+
+const getFrameAncestors = (req?: IncomingMessage, registration?: SharedDevRegistration | null) => {
     const ancestors = new Set<string>(["'self'"]);
+    const appPort = registration?.appPort;
     if (appPort) {
         ancestors.add(`http://127.0.0.1:${appPort}`);
         ancestors.add(`http://localhost:${appPort}`);
         ancestors.add(`https://127.0.0.1:${appPort}`);
         ancestors.add(`https://localhost:${appPort}`);
     }
+
+    if (registration) {
+        if (registration.allowedDevDomain) {
+            ancestors.add(`http://${registration.allowedDevDomain}`);
+            ancestors.add(`https://${registration.allowedDevDomain}`);
+        }
+        const domains = Array.isArray(registration.allowedDomains) ? registration.allowedDomains : [registration.allowedDomains];
+        for (const domain of domains) {
+            if (domain) {
+                ancestors.add(`http://${domain}`);
+                ancestors.add(`https://${domain}`);
+            }
+        }
+    }
+
     const requestOrigin = normalizeAncestorOrigin(String(req?.headers.origin || ""));
     const refererOrigin = normalizeAncestorOrigin(String(req?.headers.referer || ""));
     if (requestOrigin) ancestors.add(requestOrigin);
@@ -62,10 +95,10 @@ const getFrameAncestors = (req?: IncomingMessage, appPort?: number) => {
     return [...ancestors];
 };
 
-const buildFrameAwarePolicy = (nonce: string, req?: IncomingMessage, appPort?: number) =>
+const buildFrameAwarePolicy = (nonce: string, req?: IncomingMessage, registration?: SharedDevRegistration | null) =>
     buildContentSecurityPolicy(nonce).replace(
         "frame-ancestors 'self'",
-        `frame-ancestors ${getFrameAncestors(req, appPort).join(" ")}`
+        `frame-ancestors ${getFrameAncestors(req, registration).join(" ")}`
     );
 
 const readRequestBody = async (req: IncomingMessage) =>
@@ -105,6 +138,37 @@ const broadcastEvent = (appName: string, event: SharedDevEvent) => {
 };
 
 const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
+    const host = req.headers.host || "";
+    if (isLocalHost(host)) {
+        // Localhost/127.0.0.1 is always allowed for devtools server
+    } else {
+        // For Shared Dev Server, we need to check if the app being requested allows this host
+        const url = new URL(req.url || "/", "http://127.0.0.1");
+        const resolved = getAppFromPath(url.pathname);
+        if (resolved) {
+            const { app } = resolved;
+            let allowed = false;
+            
+            if (app.allowedDevDomain && matchWildcard(app.allowedDevDomain, host.split(":")[0])) {
+                allowed = true;
+            } else {
+                const domains = Array.isArray(app.allowedDomains) ? app.allowedDomains : [app.allowedDomains];
+                for (const pattern of domains) {
+                    if (pattern && matchWildcard(pattern, host.split(":")[0])) {
+                        allowed = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!allowed) {
+                console.error(`[Dev] Blocked unallowed host access to devtools: ${host} (App: ${app.appName})`);
+                sendJson(res, { error: "Unallowed Host", message: `Host ${host} is not allowed to access devtools for ${app.appName}.` }, 403);
+                return;
+            }
+        }
+    }
+
     const url = new URL(req.url || "/", "http://127.0.0.1");
     const pathname = url.pathname;
 
@@ -129,10 +193,28 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
     }
 
     if (pathname === "/") {
+        if (!isLocalHost(host)) {
+            // Root dashboard only accessible if at least one app allows this host
+            const apps = readRegistry().apps;
+            let hostAllowed = false;
+            for (const app of apps) {
+                const domains = Array.isArray(app.allowedDomains) ? app.allowedDomains : [app.allowedDomains];
+                if ((app.allowedDevDomain && matchWildcard(app.allowedDevDomain, host.split(":")[0])) || 
+                    domains.some(d => d && matchWildcard(d, host.split(":")[0]))) {
+                    hostAllowed = true;
+                    break;
+                }
+            }
+            if (!hostAllowed) {
+                console.error(`[Dev] Blocked unallowed host access to root dashboard: ${host}`);
+                sendJson(res, { error: "Unallowed Host", message: `Host ${host} is not allowed to access the devtools dashboard.` }, 403);
+                return;
+            }
+        }
         const security = createDocumentSecurity();
         const page = await renderHomePage(readRegistry().apps);
         sendHtml(res, page(security.nonce), 200, {
-            "Content-Security-Policy": buildFrameAwarePolicy(security.nonce, req)
+            "Content-Security-Policy": buildFrameAwarePolicy(security.nonce, req, null)
         });
         return;
     }
@@ -268,7 +350,7 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const security = createDocumentSecurity();
         const page = await renderApplicationPage(app, snapshot, identifier);
         sendHtml(res, page(security.nonce), 200, {
-            "Content-Security-Policy": buildFrameAwarePolicy(security.nonce, req, app.appPort)
+            "Content-Security-Policy": buildFrameAwarePolicy(security.nonce, req, app)
         });
         return;
     }

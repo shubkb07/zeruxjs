@@ -18,6 +18,8 @@ export interface ZeruxStructureConfig {
 export interface ZeruxServerConfig {
     port?: number;
     devPort?: number;
+    allowedDomains?: string | string[];
+    allowedDevDomain?: string;
 }
 
 export interface ZeruxDevtoolsModuleConfig {
@@ -37,6 +39,8 @@ export interface ZeruxConfig {
     structure?: ZeruxStructureConfig;
     server?: ZeruxServerConfig;
     devtools?: ZeruxDevtoolsConfig;
+    allowedDomains?: string | string[];
+    allowedDevDomain?: string;
     database?: {
         default?: string;
         connections?: DatabaseConnection[];

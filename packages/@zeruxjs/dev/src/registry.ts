@@ -105,6 +105,8 @@ export const registerSharedDevApp = async (
         dataFilePath: options.dataFilePath ?? null,
         logFilePath: options.logFilePath ?? null,
         runtimeManifestPath: options.runtimeManifestPath ?? null,
+        allowedDomains: options.allowedDomains ?? [],
+        allowedDevDomain: options.allowedDevDomain ?? null,
         startedAt: now,
         updatedAt: now
     };
@@ -116,6 +118,7 @@ export const registerSharedDevApp = async (
     return {
         port,
         routeName,
+        allowedDevDomain: nextApp.allowedDevDomain,
         urls: {
             devtools: `http://127.0.0.1:${port}/${routeName}`,
             websocket: `ws://127.0.0.1:${port}/__zerux/ws?app=${encodeURIComponent(routeName)}`

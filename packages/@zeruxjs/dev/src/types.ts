@@ -8,6 +8,8 @@ export interface SharedDevRegistrationOptions {
     dataFilePath?: string;
     logFilePath?: string;
     runtimeManifestPath?: string;
+    allowedDomains?: string | string[];
+    allowedDevDomain?: string;
 }
 
 export interface SharedDevRegistration {
@@ -18,6 +20,8 @@ export interface SharedDevRegistration {
     dataFilePath: string | null;
     logFilePath: string | null;
     runtimeManifestPath: string | null;
+    allowedDomains: string | string[];
+    allowedDevDomain: string | null;
     startedAt: string;
     updatedAt: string;
 }
@@ -32,6 +36,7 @@ export interface SharedDevRegistry {
 export interface SharedDevStartResult {
     port: number;
     routeName: string;
+    allowedDevDomain: string | null;
     urls: {
         devtools: string;
         websocket: string;

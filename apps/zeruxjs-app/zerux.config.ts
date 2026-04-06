@@ -7,6 +7,8 @@ const zeruxConfig: ZeruxConfig = {
             "sample-module"
         ]
     },
+    "allowedDomains": ["zerux.shubkb.me"],
+    "allowedDevDomain": "zdev.shubkb.me",
     "database": {
         "default": "something",
         "connections": [

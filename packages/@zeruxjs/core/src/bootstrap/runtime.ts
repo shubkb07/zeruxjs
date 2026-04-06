@@ -19,6 +19,7 @@ import type {
     ZeruxRuntime
 } from "./types.js";
 import { logger } from "./logger.js";
+import { isAllowedHost } from "../utils/host.js";
 
 type HttpMethod = "ALL" | "DELETE" | "GET" | "HEAD" | "OPTIONS" | "PATCH" | "POST" | "PUT";
 
@@ -527,6 +528,23 @@ const createRuntime = async (
         entryModulePath,
         createHandler() {
             return async (req: IncomingMessage, res: ServerResponse) => {
+                const host = req.headers.host || "";
+                const allowedDomains = config.server?.allowedDomains ?? config.allowedDomains ?? [];
+                const allowedDevDomain = config.server?.allowedDevDomain ?? config.allowedDevDomain;
+
+                if (!isAllowedHost(host, allowedDomains, allowedDevDomain)) {
+                    const message = `Access from unallowed host "${host}" is restricted. Please add it to "allowedDomains" in your zerux.config.ts if this is intended.`;
+                    if (mode === "dev") {
+                        logger.error(message);
+                        sendResponse(res, { error: "Unallowed Host", message }, 400);
+                        return;
+                    } else {
+                        logger.error(`Access from unallowed host "${host}" ignored.`);
+                        res.destroy();
+                        return;
+                    }
+                }
+
                 try {
                     const url = new URL(req.url || "/", "http://127.0.0.1");
                     const pathname = sanitizePathname(url.pathname);

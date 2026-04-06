@@ -166,7 +166,7 @@ const ensureSharedDevSockets = (server: http.Server) => {
 
 const createInjectedAppHandler = (
     handler: (req: any, res: any) => Promise<void>,
-    options: { routeName: string; devServerUrl: string }
+    options: { routeName: string; devServerUrl: string; allowedDevDomain?: string | null }
 ) => {
     return async (req: any, res: any) => {
         if (!isPrimaryHtmlRequest(req)) {
@@ -221,7 +221,8 @@ const createInjectedAppHandler = (
             const html = Buffer.concat(chunks).toString("utf8");
             const transformed = injectDevClient(html, {
                 routeName: options.routeName,
-                devServerUrl: options.devServerUrl
+                devServerUrl: options.devServerUrl,
+                allowedDevDomain: options.allowedDevDomain
             });
 
             res.setHeader = originalSetHeader;
@@ -339,7 +340,9 @@ export const startServer = async (details: any) => {
             preferredPort: details.dev.port,
             dataFilePath: details.dev.dataFilePath,
             logFilePath: details.dev.logFilePath,
-            runtimeManifestPath: details.dev.runtimeManifestPath
+            runtimeManifestPath: details.dev.runtimeManifestPath,
+            allowedDomains: details.config?.server?.allowedDomains ?? details.config?.allowedDomains,
+            allowedDevDomain: details.config?.server?.allowedDevDomain ?? details.config?.allowedDevDomain
         });
         const sharedDevHandle = await ensureSharedDevServer(devInfo.port);
         if (sharedDevHandle) {
@@ -367,7 +370,8 @@ export const startServer = async (details: any) => {
     if (devInfo) {
         appRequestHandler = createInjectedAppHandler(details.app.func, {
             routeName: devInfo.routeName,
-            devServerUrl: devInfo.urls.devtools
+            devServerUrl: devInfo.urls.devtools,
+            allowedDevDomain: devInfo.allowedDevDomain
         });
     }
 

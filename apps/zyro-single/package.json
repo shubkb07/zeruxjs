@@ -2,6 +2,7 @@
   "name": "zyro-single",
   "version": "1.0.0",
   "description": "Zyro Single Page Application",
+  "private": "true",
   "keywords": [
     "Zyro Single Page Application"
   ],

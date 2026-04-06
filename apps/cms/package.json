@@ -2,6 +2,7 @@
   "name": "cms",
   "version": "1.0.0",
   "description": "Zyro CMS",
+  "private": "true",
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

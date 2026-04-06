@@ -2,6 +2,7 @@
   "name": "zyro",
   "version": "1.0.0",
   "description": "Super Framework",
+  "private": "true",
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

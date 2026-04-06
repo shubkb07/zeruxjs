@@ -69,6 +69,8 @@ You may choose either license for your use.
 
 ## Third-Party Dependencies
 
+more info at [Third-Party Dependencies](./assets/json/third-party.json)
 | Dependency | Version | License | Source | Used In |
 |-----------|--------|--------|--------|--------|
 | Portless | 0.7.1 | Apache 2.0 | [Github](https://github.com/vercel-labs/portless), [Website](https://port1355.dev/) | @zerux/server |
+| Valibot | 1.3.1 | MIT | [Github](https://github.com/open-circle/valibot), [Website](https://valibot.dev/) | @zerux/validator |

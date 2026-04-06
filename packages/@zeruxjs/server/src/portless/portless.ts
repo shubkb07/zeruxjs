@@ -1,10 +1,10 @@
 // index.ts
 
-export * from "./portless/types.js";
-export * from "./portless/proxy.js";
-export * from "./portless/routes.js";
-export * from "./portless/utils.js";
-export * from "./portless/hosts.js";
+export * from "./types.js";
+export * from "./proxy.js";
+export * from "./routes.js";
+export * from "./utils.js";
+export * from "./hosts.js";
 
 import chalk from "chalk";
 import * as fs from "node:fs";
@@ -14,12 +14,12 @@ import {
     ensureCerts,
     isCATrusted,
     trustCA,
-} from "./portless/certs.js";
+} from "./certs.js";
 
-import { createProxyServer } from "./portless/proxy.js";
-import { formatUrl, parseHostname } from "./portless/utils.js";
-import { syncHostsFile, cleanHostsFile } from "./portless/hosts.js";
-import { FILE_MODE, RouteStore, RouteConflictError } from "./portless/routes.js";
+import { createProxyServer } from "./proxy.js";
+import { formatUrl, parseHostname } from "./utils.js";
+import { syncHostsFile, cleanHostsFile } from "./hosts.js";
+import { FILE_MODE, RouteStore, RouteConflictError } from "./routes.js";
 
 import {
     DEFAULT_HTTPS_PROXY_PORT,
@@ -37,9 +37,9 @@ import {
     spawnCommand,
     writeTlsMarker,
     writeTldFile,
-} from "./portless/cli-utils.js";
+} from "./cli-utils.js";
 
-import { inferProjectName, detectWorktreePrefix } from "./portless/auto.js";
+import { inferProjectName, detectWorktreePrefix } from "./auto.js";
 
 const CLI_NAME = "zerux-server";
 

@@ -9,7 +9,7 @@ import {
     portlessHosts,
     portlessTrust,
     portlessStop,
-} from "../portless.js";
+} from "../portless/portless.js";
 
 const CLI_NAME = "zerux-server";
 

@@ -1,4 +1,4 @@
-import type { ZeruxConfig } from '@zeruxjs/core'
+import type { ZeruxConfig } from 'zeruxjs'
 
 const zeruxConfig: ZeruxConfig = {
     "type": "fix",

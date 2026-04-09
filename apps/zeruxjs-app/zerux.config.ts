@@ -1,4 +1,4 @@
-import type { ZeruxConfig } from '@zeruxjs/core'
+import type { ZeruxConfig } from 'zeruxjs'
 
 const zeruxConfig: ZeruxConfig = {
     "type": "fix",
@@ -21,7 +21,7 @@ const zeruxConfig: ZeruxConfig = {
                     "username": process.env.DB_USER,
                     "password": process.env.DB_PASSWORD,
                     "database": process.env.DB_NAME,
-                    "port": process.env.DB_PORT,
+                    "port": Number(process.env.DB_PORT) || 3306,
                     "prefix": process.env.DB_PREFIX,
                     "polling": true,
                     "pollingInterval": 1000,
@@ -29,6 +29,6 @@ const zeruxConfig: ZeruxConfig = {
             }
         ]
     }
-}
+};
 
 export default zeruxConfig;

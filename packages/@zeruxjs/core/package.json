@@ -1,5 +1,5 @@
 {
-  "name": "@zeruxjs/core",
+  "name": "zeruxjs",
   "version": "1.0.0",
   "description": "Main application ZeruxJS Framework",
   "type": "module",

@@ -1,5 +1,5 @@
 {
-  "name": "@zeruxjs/db-sqllite",
+  "name": "@zeruxjs/db-sqlite",
   "version": "1.0.0",
   "description": "Helper for @zerux/db for SQL-Lite Database.",
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
@@ -16,6 +16,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@zeruxjs/db": "*",
+    "@zeruxjs/db-sql-core": "*"
   },
   "keywords": [
     "Helper for @zerux/db for SQL-Lite Database."

@@ -3,6 +3,7 @@ const sections = [
   { href: "/blog/zerux-runtime", title: "Dynamic Blog Route", body: "Checks `[slug]` route params and composable formatting." },
   { href: "/api/health", title: "API Health", body: "JSON route handler using middleware and controller references." },
   { href: "/api/echo", title: "API Echo", body: "POST endpoint for request body and query parsing." },
+  { href: "/db-demo", title: "DB Demo", body: "Creates a table on demand and inserts rows through @zeruxjs/db." },
   { href: "/plugin/runtime", title: "Plugin Route", body: "Route added at runtime by a Zerux plugin." },
   { href: "/boom", title: "Intentional Error", body: "Throws an `HttpError` so error handling and logs are visible." }
 ];

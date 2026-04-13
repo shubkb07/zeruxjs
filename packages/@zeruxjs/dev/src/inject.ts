@@ -602,25 +602,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
   });
 })();
 </script>
-<script type="module">
-  import {
-    onCLS,
-    onINP,
-    onLCP,
-    onFCP,
-    onTTFB
-  } from 'https://unpkg.com/web-vitals@5/dist/web-vitals.attribution.js?module';
-
-  const logMetric = (metric) => {
-    console.log(metric.name, metric.value, metric.attribution);
-  };
-
-  onCLS(logMetric);
-  onINP(logMetric);
-  onLCP(logMetric);
-  onFCP(logMetric);
-  onTTFB(logMetric);
-</script>`;
+`;
 
 export const isPrimaryHtmlRequest = (req: IncomingMessage) => {
   if ((req.method || "GET").toUpperCase() !== "GET") return false;

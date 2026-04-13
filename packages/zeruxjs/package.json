@@ -14,11 +14,13 @@
   },
   "exports": {
     ".": "./dist/index.js",
+    "./loader": "./dist/loader/register-loader.js",
     "./database": "./dist/bootstrap/database.js",
     "./schema/schema.config.json": "./assets/json/schema.config.json"
   },
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
+    "@zeruxjs/db": "*",
     "@zeruxjs/dev": "*",
     "@zeruxjs/hooks": "*",
     "@zeruxjs/server": "*"

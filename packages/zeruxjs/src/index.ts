@@ -1,8 +1,15 @@
 export interface DatabaseConnection {
     name: string;
     slug: string;
-    connecter: string;
-    options?: Record<string, string | number | boolean>;
+    connector?: string;
+    connecter?: string;
+    options?: Record<string, unknown>;
+}
+
+export interface DatabaseConfig {
+    default?: string;
+    connections?: DatabaseConnection[];
+    connection?: DatabaseConnection[];
 }
 
 export interface ZeruxStructureConfig {
@@ -41,10 +48,9 @@ export interface ZeruxConfig {
     devtools?: ZeruxDevtoolsConfig;
     allowedDomains?: string | string[];
     allowedDevDomain?: string;
-    database?: {
-        default?: string;
-        connections?: DatabaseConnection[];
-    };
+    connectorManager?: string;
+    db?: DatabaseConfig;
+    database?: DatabaseConfig;
     [key: string]: any;
 }
 

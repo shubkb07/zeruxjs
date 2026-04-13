@@ -1,7 +1,7 @@
 {
-  "name": "@zeruxjs/db-pgsql",
+  "name": "@zeruxjs/db-sql-core",
   "version": "1.0.0",
-  "description": "Helper for @zerux/db for Postgre Database.",
+  "description": "Internal SQL compiler and executor helpers for ZeruxJS database connectors.",
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"
@@ -18,11 +18,6 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@zeruxjs/db": "*",
-    "@zeruxjs/db-sql-core": "*",
-    "pg": "^8.16.3"
-  },
-  "keywords": [
-    "Helper for @zerux/db for Postgre Database."
-  ]
+    "@zeruxjs/db": "*"
+  }
 }

@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { startServer } from "@zeruxjs/server";
 
-import { loadConfig, resolveStructure } from "../bootstrap/config.js";
+import { loadConfig, resolveDefaultEnvFiles, resolveStructure } from "../bootstrap/config.js";
 import { loadEnvironmentFiles } from "../bootstrap/env.js";
 import { registerProcessExceptionHandlers } from "../bootstrap/exception.js";
 import { writeRuntimeManifest } from "../bootstrap/manifest.js";
@@ -85,6 +85,7 @@ export const server = async (
     args: { namedArgs?: Record<string, string | boolean | string[]>; positionalArgs?: string[] }
 ) => {
     const rootDir = process.cwd();
+    loadEnvironmentFiles(resolveDefaultEnvFiles(rootDir, mode));
     const config = await loadConfig(rootDir, mode);
     const structure = resolveStructure(rootDir, config);
 
@@ -133,8 +134,9 @@ export const server = async (
             dataFilePath: devDataPath,
             logFilePath: logger.getFilePath(),
             runtimeManifestPath: manifestPath,
-            watchTriggerFunc: (event: { file?: string }) => {
+            watchTriggerFunc: (event: { file?: string, type?: string }) => {
                 const file = event.file ?? "";
+                if (event.type === "resave") return false;
                 if (!file) return false;
                 if (file.includes("node_modules")) return false;
                 if (isInsideGeneratedDir(file)) return false;
@@ -142,6 +144,7 @@ export const server = async (
                 return true;
             },
             watchFunc: async () => {
+                loadEnvironmentFiles(resolveDefaultEnvFiles(rootDir, mode));
                 const nextConfig = await loadConfig(rootDir, mode);
                 const nextStructure = resolveStructure(rootDir, nextConfig);
                 loadEnvironmentFiles(nextStructure.envFiles);

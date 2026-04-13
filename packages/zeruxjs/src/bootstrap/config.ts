@@ -22,6 +22,17 @@ const asArray = (value?: string | string[]) => {
 const uniquePaths = (rootDir: string, values: string[]) =>
     [...new Set(values.map((value) => path.resolve(rootDir, value)))];
 
+export const resolveDefaultEnvFiles = (rootDir: string, mode: RuntimeMode): string[] => {
+    const environment = process.env.NODE_ENV || (mode === "start" ? "production" : "development");
+
+    return uniquePaths(rootDir, [
+        ".env",
+        ".env.local",
+        `.env.${environment}`,
+        `.env.${environment}.local`
+    ]);
+};
+
 export const loadConfig = async (rootDir: string, mode: RuntimeMode): Promise<ZeruxConfig> => {
     const configPath = findExistingFile(rootDir, [
         "zerux.config.ts",
@@ -51,10 +62,7 @@ export const resolveStructure = (
     const environment = process.env.NODE_ENV || (mode === "function" ? "production" : "development");
     const explicitEnvFiles = asArray(structure.env);
     const envFiles = uniquePaths(rootDir, [
-        ".env",
-        ".env.local",
-        `.env.${environment}`,
-        `.env.${environment}.local`,
+        ...resolveDefaultEnvFiles(rootDir, environment === "production" ? "start" : "dev"),
         ...explicitEnvFiles
     ]);
 

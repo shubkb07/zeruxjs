@@ -5,6 +5,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { exceptionHandler } from "../exceptions/exception_handler.js";
 import { findScriptEntry, importModule, toPosixPath, walkDirectory } from "../utils/fs.js";
 import type { ZeruxConfig } from "../index.js";
+import { initializeDatabaseRuntime } from "./database.js";
 import type {
     BootstrapResult,
     DiscoveredRoute,
@@ -676,6 +677,7 @@ export const bootstrapApplication = async (
     config: ZeruxConfig,
     structure: ResolvedStructure
 ): Promise<BootstrapResult> => {
+    await initializeDatabaseRuntime(config);
     const runtime = await createRuntime(rootDir, mode, config, structure);
 
     return {

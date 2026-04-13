@@ -5,6 +5,7 @@ import net from "node:net";
 
 export type WatcherEvent = { file: string; type: string };
 export type WatcherCallback = (event: WatcherEvent, type: string) => void;
+type WatcherError = NodeJS.ErrnoException;
 
 const watchers = new Map<string, Set<WatcherCallback>>();
 const masterClients = new Map<string, Set<net.Socket>>();
@@ -38,14 +39,14 @@ export function startWatcher(rootDir: string, onChange?: WatcherCallback) {
         console.log(`[Watcher] Connected to existing watcher daemon for: ${rootDir}`);
 
         let buffer = "";
-        client.on("data", (data) => {
+        client.on("data", (data: Buffer) => {
             buffer += data.toString();
             const lines = buffer.split("\n");
             buffer = lines.pop() || "";
             for (const line of lines) {
                 if (!line.trim()) continue;
                 try {
-                    const event = JSON.parse(line);
+                    const event = JSON.parse(line) as WatcherEvent;
                     for (const cb of watchers.get(rootDir) || []) {
                         cb(event, event.type);
                     }
@@ -60,7 +61,7 @@ export function startWatcher(rootDir: string, onChange?: WatcherCallback) {
         });
     });
 
-    client.on("error", (err: any) => {
+    client.on("error", (err: WatcherError) => {
         if (err.code === "ENOENT" || err.code === "ECONNREFUSED") {
             startMasterDaemon(rootDir, socketPath);
         }
@@ -81,14 +82,14 @@ function startMasterDaemon(rootDir: string, socketPath: string) {
 
     if (process.platform !== "win32") {
         if (fs.existsSync(socketPath)) {
-            try { fs.unlinkSync(socketPath); } catch (e) { }
+            try { fs.unlinkSync(socketPath); } catch { }
         }
     }
 
     const clients = new Set<net.Socket>();
     masterClients.set(rootDir, clients);
 
-    const server = net.createServer((socket) => {
+    const server = net.createServer((socket: net.Socket) => {
         clients.add(socket);
         socket.on("close", () => clients.delete(socket));
         socket.on("error", () => clients.delete(socket));
@@ -99,8 +100,8 @@ function startMasterDaemon(rootDir: string, socketPath: string) {
         isTakingOver.delete(rootDir);
 
         const watchDir = path.resolve(rootDir);
-        const fileHashes = new Map();
-        const debounceTimers = new Map();
+        const fileHashes = new Map<string, string>();
+        const debounceTimers = new Map<string, NodeJS.Timeout>();
 
         const watcher = fs.watch(watchDir, { recursive: true }, (event: string, file: string | null) => {
             if (!file) return;
@@ -116,8 +117,9 @@ function startMasterDaemon(rootDir: string, socketPath: string) {
                 let stat;
                 try {
                     stat = fs.statSync(filePath);
-                } catch (err: any) {
-                    if (err.code === "ENOENT") {
+                } catch (err) {
+                    const error = err as WatcherError;
+                    if (error.code === "ENOENT") {
                         fileHashes.delete(filePath);
                         broadcast({ file, type: "delete" });
                     }
@@ -160,7 +162,7 @@ function startMasterDaemon(rootDir: string, socketPath: string) {
                 if (process.platform !== "win32" && fs.existsSync(socketPath)) {
                     fs.unlinkSync(socketPath);
                 }
-            } catch (e) { }
+            } catch { }
         };
 
         process.on("exit", cleanup);
@@ -168,7 +170,7 @@ function startMasterDaemon(rootDir: string, socketPath: string) {
         process.on("SIGTERM", () => { cleanup(); process.exit(); });
     });
 
-    server.on("error", (err: any) => {
+    server.on("error", (err: WatcherError) => {
         isTakingOver.delete(rootDir);
         if (err.code === "EADDRINUSE") {
             setTimeout(() => {
@@ -187,8 +189,6 @@ function startMasterDaemon(rootDir: string, socketPath: string) {
     });
 
     function broadcast(eventData: WatcherEvent) {
-        console.log(`[Watcher] File changed: ${eventData.file} (${eventData.type})`);
-
         // local listeners
         for (const cb of watchers.get(rootDir) || []) {
             cb(eventData, eventData.type);

@@ -2,6 +2,7 @@ import type { ZeruxConfig } from 'zeruxjs'
 
 const zeruxConfig: ZeruxConfig = {
     "type": "fix",
+    "connectorManager": "@zeruxjs/db",
     "devtools": {
         "modules": [
             "sample-module"
@@ -9,13 +10,13 @@ const zeruxConfig: ZeruxConfig = {
     },
     "allowedDomains": ["zerux.shubkb.me"],
     "allowedDevDomain": "zdev.shubkb.me",
-    "database": {
+    "db": {
         "default": "something",
         "connections": [
             {
                 "name": "Something",
                 "slug": "something",
-                "connecter": "@zeruxjs/db-mysql",
+                "connector": "@zeruxjs/db-mysql",
                 "options": {
                     "host": process.env.DB_HOST,
                     "username": process.env.DB_USER,

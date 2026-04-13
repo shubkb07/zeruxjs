@@ -1,4 +1,8 @@
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+
 import { resolvePath } from "@zeruxjs/hooks";
+import { resolveRegisteredSpecifier } from "./registry.js";
 
 type ResolveContext = {
     parentURL?: string;
@@ -21,6 +25,17 @@ export async function resolve(
     nextResolve: NextResolve
 ): Promise<ResolveResult> {
     try {
+        if (specifier === "db" || specifier.startsWith("db:")) {
+            const identifier = specifier === "db" ? "default" : specifier.slice(3);
+            const modulePath = path.join(process.cwd(), ".zerux", "virtual", "db", `${identifier}.mjs`);
+            return nextResolve(pathToFileURL(modulePath).href, context);
+        }
+
+        const registered = resolveRegisteredSpecifier(specifier);
+        if (registered) {
+            return nextResolve(registered, context);
+        }
+
         const resolved = resolvePath(specifier);
 
         if (resolved) {

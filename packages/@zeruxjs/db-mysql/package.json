@@ -17,6 +17,11 @@
     "build": "tsc",
     "dev": "tsc --watch"
   },
+  "dependencies": {
+    "@zeruxjs/db": "*",
+    "@zeruxjs/db-sql-core": "*",
+    "mysql2": "^3.15.2"
+  },
   "keywords": [
     "Helper for @zerux/db for MySQL Database."
   ]

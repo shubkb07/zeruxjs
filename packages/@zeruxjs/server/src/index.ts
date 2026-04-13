@@ -428,6 +428,10 @@ export const startServer = async (details: any) => {
         startWatcher(root, async (event: any) => {
             if (!trigger(event)) return;
 
+            console.log(
+                `[Watcher] File changed: ${event.file} (${event.type})`
+            );
+
             await new Promise<void>((r) =>
                 appServer.close(() => r())
             );

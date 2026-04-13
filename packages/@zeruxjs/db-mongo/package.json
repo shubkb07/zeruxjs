@@ -17,6 +17,9 @@
     "build": "tsc",
     "dev": "tsc --watch"
   },
+  "dependencies": {
+    "@zeruxjs/db": "*"
+  },
   "keywords": [
     "Helper for @zerux/db for MongoDB Database."
   ]

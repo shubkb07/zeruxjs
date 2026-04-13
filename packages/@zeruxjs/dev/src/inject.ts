@@ -7,7 +7,7 @@ interface DevClientScriptOptions {
   devPortLessAlias: { value: string | null | false };
 }
 
-const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPortLessAlias }: DevClientScriptOptions) => `<script>
+const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPortLessAlias }: DevClientScriptOptions) => `<script data-zerux-dev-client="true">
 (() => {
   if (window.__ZERUX_DEV_CLIENT__) return;
   window.__ZERUX_DEV_CLIENT__ = true;
@@ -69,6 +69,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
   };
 
   const styles = document.createElement('style');
+  styles.id = 'zerux-dev-style';
   styles.textContent = \`
     #zerux-dev-button,
     #zerux-dev-drawer,
@@ -417,6 +418,177 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
     const defaults = getDefaultDrawerPosition();
     applyDrawerPosition(defaults.left, defaults.top);
   };
+  const reconnectState = {
+    socket: null,
+    timer: null,
+    attempt: 0,
+    applyingUpdate: false,
+    queuedPayload: null
+  };
+  const clearReconnectTimer = () => {
+    if (!reconnectState.timer) return;
+    clearTimeout(reconnectState.timer);
+    reconnectState.timer = null;
+  };
+  const refreshStylesheets = (version) => {
+    const stamp = encodeURIComponent(version || new Date().toISOString());
+    const links = Array.from(document.querySelectorAll('link[rel="stylesheet"][href]'));
+
+    links.forEach((link) => {
+      if (link.id === 'zerux-dev-style') return;
+      try {
+        const href = link.getAttribute('href');
+        if (!href) return;
+        const nextUrl = new URL(href, window.location.href);
+        nextUrl.searchParams.set('t', stamp);
+        link.setAttribute('href', nextUrl.toString());
+      } catch {}
+    });
+  };
+  const stripInjectedDevNodes = (root) => {
+    root.querySelectorAll('#zerux-dev-button, #zerux-dev-drawer, #zerux-dev-error-screen, script[data-zerux-dev-client="true"]').forEach((node) => node.remove());
+  };
+  const executeScripts = (root) => {
+    root.querySelectorAll('script').forEach((script) => {
+      if (script.hasAttribute('data-zerux-dev-client')) {
+        script.remove();
+        return;
+      }
+      const nextScript = document.createElement('script');
+      for (const attr of script.attributes) {
+        nextScript.setAttribute(attr.name, attr.value);
+      }
+      nextScript.textContent = script.textContent || '';
+      script.replaceWith(nextScript);
+    });
+  };
+  const applyDocumentPatch = async (version) => {
+    const response = await fetch(window.location.href, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'text/html',
+        'Cache-Control': 'no-cache',
+        'X-Zerux-Hot-Update': version || new Date().toISOString()
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch updated document');
+    }
+
+    const html = await response.text();
+    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    if (!parsed || !parsed.body) {
+      throw new Error('Failed to parse updated document');
+    }
+
+    stripInjectedDevNodes(parsed);
+
+    const preservedNodes = [
+      document.getElementById('zerux-dev-button'),
+      document.getElementById('zerux-dev-drawer'),
+      document.getElementById('zerux-dev-error-screen')
+    ].filter(Boolean);
+
+    document.title = parsed.title || document.title;
+
+    Array.from(document.body.attributes).forEach((attr) => {
+      document.body.removeAttribute(attr.name);
+    });
+    Array.from(parsed.body.attributes).forEach((attr) => {
+      document.body.setAttribute(attr.name, attr.value);
+    });
+
+    const nextNodes = Array.from(parsed.body.childNodes).map((node) => document.importNode(node, true));
+    document.body.replaceChildren(...nextNodes, ...preservedNodes);
+    executeScripts(document.body);
+    window.dispatchEvent(new CustomEvent('zerux:hot-update', {
+      detail: {
+        strategy: 'document',
+        updatedAt: version || new Date().toISOString()
+      }
+    }));
+  };
+  const applyHotUpdate = async (payload) => {
+    if (reconnectState.applyingUpdate) {
+      reconnectState.queuedPayload = payload;
+      return;
+    }
+
+    reconnectState.applyingUpdate = true;
+    try {
+      if (payload && payload.strategy === 'style') {
+        refreshStylesheets(payload.updatedAt);
+      } else {
+        await applyDocumentPatch(payload && payload.updatedAt);
+      }
+    } catch {
+      window.location.reload();
+      return;
+    } finally {
+      reconnectState.applyingUpdate = false;
+    }
+
+    if (reconnectState.queuedPayload) {
+      const nextPayload = reconnectState.queuedPayload;
+      reconnectState.queuedPayload = null;
+      await applyHotUpdate(nextPayload);
+    }
+  };
+  const scheduleReconnect = () => {
+    if (reconnectState.timer) return;
+    const delay = Math.min(500 * Math.pow(2, reconnectState.attempt), 5000);
+    reconnectState.attempt += 1;
+    reconnectState.timer = setTimeout(() => {
+      reconnectState.timer = null;
+      connectSocket();
+    }, delay);
+  };
+  const connectSocket = () => {
+    if (reconnectState.socket && (reconnectState.socket.readyState === WebSocket.OPEN || reconnectState.socket.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+
+    clearReconnectTimer();
+    const socket = new WebSocket(wsUrl);
+    reconnectState.socket = socket;
+
+    socket.addEventListener('open', () => {
+      reconnectState.attempt = 0;
+      clearReconnectTimer();
+      if (frame && state.drawerOpen && frame.getAttribute('src') !== pairedDevtoolsUrl) {
+        isFrameLoaded = false;
+        frame.setAttribute('src', pairedDevtoolsUrl);
+      }
+    });
+
+    socket.addEventListener('message', async (message) => {
+      try {
+        const data = JSON.parse(message.data);
+        if (data.type === 'reload') {
+          window.location.reload();
+          return;
+        }
+        if (data.type === 'hot-update') {
+          await applyHotUpdate(data.payload || {});
+        }
+      } catch {}
+    });
+
+    socket.addEventListener('close', () => {
+      if (reconnectState.socket === socket) {
+        reconnectState.socket = null;
+      }
+      scheduleReconnect();
+    });
+
+    socket.addEventListener('error', () => {
+      try {
+        socket.close();
+      } catch {}
+    });
+  };
   const showErrorOverlay = (entry) => {
     errorMessage.textContent = entry.message || 'Application Error';
     errorStack.textContent = [entry.message, entry.source, entry.stack].filter(Boolean).join('\\n\\n');
@@ -536,6 +708,11 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       applyOverlayTheme();
     }
   });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      connectSocket();
+    }
+  });
   window.matchMedia?.('(prefers-color-scheme: dark)')?.addEventListener?.('change', applyOverlayTheme);
   window.addEventListener('resize', () => {
     if (window.innerWidth <= 980) {
@@ -591,15 +768,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
     send(entry);
     error(...args);
   };
-  const socket = new WebSocket(wsUrl);
-  socket.addEventListener('message', (message) => {
-    try {
-      const data = JSON.parse(message.data);
-      if (data.type === 'reload') {
-        window.location.reload();
-      }
-    } catch {}
-  });
+  connectSocket();
 })();
 </script>
 `;

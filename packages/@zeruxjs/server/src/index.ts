@@ -467,10 +467,14 @@ export const startServer = async (details: any) => {
             if (devInfo) {
                 await publishSharedDevEvent(devInfo.port, {
                     app: devInfo.routeName,
-                    type: "reload",
+                    type: "hot-update",
                     payload: {
                         file: event.file ?? null,
-                        appUrls
+                        appUrls,
+                        strategy: typeof event.file === "string" && /\.(css|less|sass|scss|styl|pcss)$/i.test(event.file)
+                            ? "style"
+                            : "document",
+                        updatedAt: new Date().toISOString()
                     }
                 });
             }

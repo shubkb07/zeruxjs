@@ -9,8 +9,8 @@
         "modificationReason": "Make it to use with zerux start command directy invoke portless functionality.",
         "usedIn": [
             {
-                "package": "@zeruxjs/server",
-                "path": "./packages/@zeruxjs/server/src/portless"
+                "package": "zsrv",
+                "path": "./packages/zsrv/src/portless"
             }
         ]
     },
@@ -24,8 +24,8 @@
         "modification": "Make it to use with zerux start command directy invoke portless functionality.",
         "usedIn": [
             {
-                "package": "@zeruxjs/server",
-                "path": "./packages/@zeruxjs/server/src/portless"
+                "package": "zsrv",
+                "path": "./packages/zsrv/src/portless"
             }
         ]
     },

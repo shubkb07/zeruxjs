@@ -1,5 +1,5 @@
 {
-  "name": "@zeruxjs/server",
+  "name": "zsrv",
   "version": "1.0.0",
   "description": "Server Creator and Handle Auto load and so via @zerux/watcher",
   "type": "module",

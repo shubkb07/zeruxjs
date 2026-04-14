@@ -74,7 +74,7 @@ ZeruxJS/
 - `src/compiler/`: Contains compiler wrappers and watcher configurations (`watcher.ts`).
 
 #### Other Important Packages (`packages/@zeruxjs/`):
-- `@zeruxjs/server`: Handles server initialization, devtools operations, and WebSocket channels.
+- `zsrv`: Handles server initialization, devtools operations, and WebSocket channels.
 - `zcli`: Framework command line utility parser, sharing commands alongside the core package.
 - `@zeruxjs/watcher`: Custom file watcher running in shared mode to optimize and reduce CPU overhead.
 - `@zeruxjs/validator`: Shared validation logic, schemas, and types for parameters and structures.

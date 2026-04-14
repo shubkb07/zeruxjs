@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { startServer } from "@zeruxjs/server";
+import { startServer } from "zsrv";
 
 import { loadConfig, resolveDefaultEnvFiles, resolveStructure } from "../bootstrap/config.js";
 import { loadEnvironmentFiles } from "../bootstrap/env.js";

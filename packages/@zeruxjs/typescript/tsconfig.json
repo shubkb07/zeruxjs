@@ -8,7 +8,9 @@
         "declaration": true,
         "sourceMap": true,
         "strict": true,
-        "types": ["node"]
+        "types": [
+            "node"
+        ]
     },
     "include": [
         "src"

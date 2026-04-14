@@ -1,4 +1,4 @@
-import { defineDevtoolsModuleSocketHandlers } from "@zeruxjs/dev";
+import { defineDevtoolsModuleSocketHandlers } from "z-dev";
 
 export default defineDevtoolsModuleSocketHandlers({
   ping({ app, snapshot, identifier, clientType, payload, module }) {

@@ -16,7 +16,7 @@ import {
     resolveSharedDevModuleSocketRequest,
     setSharedDevEventBroadcaster,
     unregisterSharedDevApp
-} from "@zeruxjs/dev";
+} from "z-dev";
 
 import {
     portlessProxy,

@@ -1,4 +1,4 @@
-import { defineDevtoolsModuleApiHandlers } from "@zeruxjs/dev";
+import { defineDevtoolsModuleApiHandlers } from "z-dev";
 
 export default defineDevtoolsModuleApiHandlers({
   inspect({ app, snapshot, identifier, body, module }) {

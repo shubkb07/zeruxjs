@@ -17,7 +17,7 @@
   },
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
-    "@zeruxjs/dev": "*",
+    "z-dev": "*",
     "@zeruxjs/watcher": "*",
     "ws": "^8.19.0"
   },

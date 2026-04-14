@@ -21,7 +21,7 @@
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
     "@zeruxjs/db": "*",
-    "@zeruxjs/dev": "*",
+    "z-dev": "*",
     "@zeruxjs/hooks": "*",
     "@zeruxjs/server": "*",
     "zcli": "*"

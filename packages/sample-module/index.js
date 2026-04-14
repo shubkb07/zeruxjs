@@ -1,4 +1,4 @@
-import { defineDevtoolsModule } from "@zeruxjs/dev";
+import { defineDevtoolsModule } from "z-dev";
 
 const formatRoutes = (snapshot) =>
   Array.isArray(snapshot?.routes) && snapshot.routes.length

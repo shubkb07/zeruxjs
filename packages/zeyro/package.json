@@ -1,0 +1,16 @@
+{
+    "name": "zeyro",
+    "version": "1.0.0",
+    "description": "Zeyro Testing Package",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch"
+    },
+    "exports": {
+        ".": "./dist/index.js"
+    },
+    "license": "MIT"
+}

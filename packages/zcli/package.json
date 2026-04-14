@@ -1,5 +1,5 @@
 {
-  "name": "@zeruxjs/cli",
+  "name": "zcli",
   "version": "1.0.0",
   "description": "CLI Wrapper to help share CLI keyword and Coloring and other small plugins",
   "type": "module",

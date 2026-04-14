@@ -7,7 +7,7 @@
   "main": "index.js",
   "dependencies": {
     "@zeruxjs/db": "*",
-    "@zeruxjs/core": "*",
+    "zeruxjs": "*",
     "sample-module": "*",
     "@zeruxjs/typescript": "*"
   },

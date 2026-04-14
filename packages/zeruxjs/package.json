@@ -23,7 +23,8 @@
     "@zeruxjs/db": "*",
     "@zeruxjs/dev": "*",
     "@zeruxjs/hooks": "*",
-    "@zeruxjs/server": "*"
+    "@zeruxjs/server": "*",
+    "zcli": "*"
   },
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {

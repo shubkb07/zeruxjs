@@ -6,7 +6,7 @@ The modular core of the ZeruxJS ecosystem. Contains the framework's essential ru
 
 | Package | Purpose |
 | :--- | :--- |
-| [`@zeruxjs/core`](./core) | Main framework runtime and core API. |
+| [`zeruxjs`](./core) | Main framework runtime and core API. |
 | [`@zeruxjs/tools`](./tools) | Shared development tools and file watchers. |
 | [`@zeruxjs/lint`](./lint) | Integrated linting system for ZeruxJS projects. |
 | [`@zeruxjs/typescript`](./typescript) | Pre-configured TypeScript support and types. |

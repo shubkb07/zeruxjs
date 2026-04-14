@@ -65,7 +65,7 @@ ZeruxJS/
 ## Core Package:
 ### ZeruxJS `packages/zeruxjs`: It is entry Package and all main connector of ZeruxJS Framework, its following packages are in `packages/@zeruxjs`, Important Files:
 - `src/index.ts`: Export Funtions to public, more export mention in package.json,
-- `src/bin/zerux.js`: It export `zerux` cli command, that can be used to run zerux commands, and it even uses `@zeruxjs/cli` package, to let other package share `zerux` keyword.
+- `src/bin/zerux.js`: It export `zerux` cli command, that can be used to run zerux commands, and it even uses `zcli` package, to let other package share `zerux` keyword.
 - `src/bootstrap/`: Contains core runtime and bootstrapping logic (e.g., `runtime.ts` for managing application lifecycles, configuration (`config.ts`), loggers (`logger.ts`), database (`database.ts`), and environments (`env.ts`)).
 - `src/commands/`: Defines CLI commands like `server` for starting development/production servers, and `build`.
 - `src/loader/`: Contains custom loaders and module-resolution hooks (`loader.ts`, `register-loader.ts`).
@@ -75,7 +75,7 @@ ZeruxJS/
 
 #### Other Important Packages (`packages/@zeruxjs/`):
 - `@zeruxjs/server`: Handles server initialization, devtools operations, and WebSocket channels.
-- `@zeruxjs/cli`: Framework command line utility parser, sharing commands alongside the core package.
+- `zcli`: Framework command line utility parser, sharing commands alongside the core package.
 - `@zeruxjs/watcher`: Custom file watcher running in shared mode to optimize and reduce CPU overhead.
 - `@zeruxjs/validator`: Shared validation logic, schemas, and types for parameters and structures.
 - `@zeruxjs/db` (and `db-*` adapters): Unified database wrappers to easily connect to Mongo, MySQL, PostgreSQL, and SQLite.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { registerLoader } from "../loader/register-loader.js";
-import { cli } from "@zeruxjs/cli";
+import { cli } from "zcli";
 
 // Core commands
 import { server } from "../commands/server.js";

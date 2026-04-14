@@ -2,6 +2,7 @@
   "name": "@zeruxjs/db-sql-core",
   "version": "1.0.0",
   "description": "Internal SQL compiler and executor helpers for ZeruxJS database connectors.",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

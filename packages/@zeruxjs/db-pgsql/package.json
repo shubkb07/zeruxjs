@@ -2,6 +2,7 @@
   "name": "@zeruxjs/db-pgsql",
   "version": "1.0.0",
   "description": "Helper for @zerux/db for Postgre Database.",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

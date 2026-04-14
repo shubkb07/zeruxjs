@@ -2,6 +2,7 @@
   "name": "@zeruxjs/validator",
   "version": "1.0.0",
   "description": "Typescript Support",
+  "private": true,
   "author": "",
   "type": "module",
   "main": "./dist/index.js",

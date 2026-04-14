@@ -2,6 +2,7 @@
   "name": "@zeruxjs/share",
   "version": "1.0.0",
   "description": "Share Button Helper",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

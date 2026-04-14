@@ -2,6 +2,7 @@
   "name": "@zeruxjs/search",
   "version": "1.0.0",
   "description": "Powerfull Search",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

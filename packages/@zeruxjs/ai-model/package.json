@@ -2,6 +2,7 @@
   "name": "@zeruxjs/ai-model",
   "version": "1.0.0",
   "description": "Light Weight AI Model trained on Docs, to help answer and solve issue on the go, can be used via @zerux/ai.",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

@@ -2,6 +2,7 @@
   "name": "@zeruxjs/vue",
   "version": "1.0.0",
   "description": "Library - VueJS support",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

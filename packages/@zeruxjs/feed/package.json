@@ -2,6 +2,7 @@
   "name": "@zeruxjs/feed",
   "version": "1.0.0",
   "description": "Feed creator",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

@@ -2,6 +2,7 @@
   "name": "@zeruxjs/mcp",
   "version": "1.0.0",
   "description": "MCP Connection Helper for AI and Stuff",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

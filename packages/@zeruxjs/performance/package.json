@@ -2,6 +2,7 @@
   "name": "@zeruxjs/performance",
   "version": "1.0.0",
   "description": "Web-Vitals, PWA, CDN, Optimize Dilevery, Server side Cache (Redis/Memcache) and more.",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

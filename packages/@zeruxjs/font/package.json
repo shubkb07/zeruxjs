@@ -2,6 +2,7 @@
   "name": "@zeruxjs/font",
   "version": "1.0.0",
   "description": "Font Adding and Using",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

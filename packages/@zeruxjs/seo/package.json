@@ -2,6 +2,7 @@
   "name": "@zeruxjs/seo",
   "version": "1.0.0",
   "description": "SEO Helper",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

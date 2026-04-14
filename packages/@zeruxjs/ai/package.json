@@ -2,6 +2,7 @@
   "name": "@zeruxjs/ai",
   "version": "1.0.0",
   "description": "AI Funtion Provider to easily connect APIs and Front-Backend too",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

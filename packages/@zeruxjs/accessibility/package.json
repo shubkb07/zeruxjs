@@ -2,6 +2,7 @@
   "name": "@zeruxjs/accessibility",
   "version": "1.0.0",
   "description": "Accesibilty Provider",
+  "private": true,
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {
     "url": "https://github.com/zeruxjs/zeruxjs/issues"

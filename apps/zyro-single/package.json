@@ -20,5 +20,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "zyrojs": "*"
   }
 }

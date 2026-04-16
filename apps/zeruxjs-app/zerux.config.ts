@@ -6,7 +6,7 @@ const zeruxConfig: ZeruxConfig = {
     "devtools": {
         "modules": [
             "sample-module",
-            "sample-os"
+            // "sample-os"
         ]
     },
     "allowedDomains": ["zerux.shubkb.me"],

@@ -19,7 +19,7 @@ const parsePort = (value: unknown) => {
 
 const isInsideGeneratedDir = (filePath: string) => {
     const normalized = filePath.replace(/\\/g, "/");
-    return normalized === ".zerux" || normalized.startsWith(".zerux/") || normalized.includes("/.zerux/");
+    return normalized === ".zdev" || normalized.startsWith(".zdev/") || normalized.includes("/.zdev/");
 };
 
 const getProjectName = (rootDir: string) => {
@@ -46,7 +46,7 @@ const writeDevSnapshot = (details: {
     appPort?: number;
     devtoolsModules?: unknown[];
 }) => {
-    const outputDir = path.join(details.rootDir, ".zerux");
+    const outputDir = path.join(details.rootDir, ".zdev");
     const snapshotPath = path.join(outputDir, "dev.json");
     const previous = fs.existsSync(snapshotPath)
         ? JSON.parse(fs.readFileSync(snapshotPath, "utf8"))
@@ -122,7 +122,7 @@ export const server = async (
     });
 
     await startServer({
-        service: "zerux",
+        service: "zdev",
         config,
         app: {
             name: appName,

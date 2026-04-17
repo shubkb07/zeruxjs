@@ -4,11 +4,11 @@
 # z-dev
 
 
-The internal development toolkit for **ZeruxJS**. `z-dev` provides the foundational infrastructure for developer tools, including the shared dev server, dev-client injection, and the devtools module registry.
+The internal development toolkit for **Zdev**. `z-dev` provides the foundational infrastructure for developer tools, including the shared dev server, dev-client injection, and the devtools module registry.
 
 ## Core Capabilities
 
-- **Shared Dev Server**: Orchestrates a single devtools server that can handle multiple ZeruxJS applications simultaneously.
+- **Shared Dev Server**: Orchestrates a single devtools server that can handle multiple Zdev applications simultaneously.
 - **Client Injection**: Automatically injects development scripts and overlays into HTML responses during development mode.
 - **Module Registry**: A flexible system to register and manage devtools modules, complete with API and WebSocket handlers.
 - **Event Bus**: A robust event broadcaster for hot-updates and real-time communication between the server and the browser.
@@ -49,10 +49,10 @@ export default defineDevtoolsModule({
 
 ## Internal Architecture
 
-`z-dev` is designed to be the "brain" behind the ZeruxJS development experience. It manages the lifecycle of the dev server and provides the bridge between the framework's internal services and the developer-facing dashboard.
+`z-dev` is designed to be the "brain" behind the Zdev development experience. It manages the lifecycle of the dev server and provides the bridge between the framework's internal services and the developer-facing dashboard.
 
 ---
 
 <p align="center">
-  Part of the ZeruxJS Monorepo.
+  Part of the Zdev Monorepo.
 </p>

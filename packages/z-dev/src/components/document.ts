@@ -10,6 +10,7 @@ interface RenderDocumentOptions {
   content: string;
   config: unknown;
   bootstrap?: unknown;
+  serviceName?: string;
   nonce?: string;
 }
 
@@ -17,13 +18,13 @@ export const createDocumentSecurity = () => ({
   nonce: createNonce()
 });
 
-export const renderDocument = ({ title, bodyClass = "", content, config, bootstrap, nonce = createNonce() }: RenderDocumentOptions) => `<!doctype html>
+export const renderDocument = ({ title, bodyClass = "", content, config, bootstrap, serviceName = "zdev", nonce = createNonce() }: RenderDocumentOptions) => `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${escapeHtml(title)}</title>
-  <link rel="stylesheet" href="/__zerux/assets/style.css" />
+  <link rel="stylesheet" href="/__${serviceName}/assets/style.css" />
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="apple-touch-icon" href="/favicon.png" />
@@ -31,12 +32,13 @@ export const renderDocument = ({ title, bodyClass = "", content, config, bootstr
 <body class="${escapeHtml(bodyClass)}">
   ${content}
   <script nonce="${escapeHtml(nonce)}">
-    window.zerux = {
+    window.zdev = {
+      service: ${serializeJsonForScript(serviceName)},
       config: ${serializeJsonForScript(config)},
       bootstrap: ${bootstrap ? serializeJsonForScript(bootstrap) : "null"}
     };
   </script>
-  <script nonce="${escapeHtml(nonce)}" type="module" src="/__zerux/assets/app.js"></script>
+  <script nonce="${escapeHtml(nonce)}" type="module" src="/__${serviceName}/assets/app.js"></script>
 </body>
 </html>`;
 

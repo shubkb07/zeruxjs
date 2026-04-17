@@ -5,7 +5,7 @@ export const SCRIPT_EXTENSIONS = [".ts", ".js", ".mjs", ".cjs"] as const;
 
 const IGNORED_DIRECTORIES = new Set([
     ".git",
-    ".zerux",
+    ".zdev",
     "coverage",
     "dist",
     "node_modules"

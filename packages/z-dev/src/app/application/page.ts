@@ -17,14 +17,16 @@ export default ({ app, snapshot, identifier, sectionId, sections, modules, nonce
   const activeId = sectionId || sections[0]?.id || "overview";
 
   return renderDocument({
-    title: `${app.routeName} | Zerux Devtools`,
-    bodyClass: "zx-application",
+    title: `${app.routeName} | ${app.serviceName.charAt(0).toUpperCase() + app.serviceName.slice(1)} Devtools`,
+    bodyClass: "zdev-application",
+    serviceName: app.serviceName,
     nonce,
     config: {
       page: "application",
       app: { routeName: app.routeName, appName: app.appName },
       identifier,
       sectionId: activeId,
+      snapshot,
       sections: sections.map(({ id, title, icon }) => ({ id, title, icon })),
       modules: modules.map((m) => ({
         id: m.id,
@@ -38,46 +40,46 @@ export default ({ app, snapshot, identifier, sectionId, sections, modules, nonce
       }))
     },
     content: `
-      <div class="zx-app-shell" data-app="${escapeHtml(app.routeName)}">
-        <header class="zx-app-topbar">
+      <div class="zdev-app-shell" data-app="${escapeHtml(app.routeName)}">
+        <header class="zdev-app-topbar">
           <div>
-            <p class="zx-eyebrow">Dev Workspace</p>
+            <p class="zdev-eyebrow">Dev Workspace</p>
             <h1>${escapeHtml(app.appName)}</h1>
-            <p class="zx-subtle">
+            <p class="zdev-subtle">
               Shared workspace for <code>${escapeHtml(app.routeName)}</code>
-              ${identifier ? `<span class="zx-session-chip">paired: ${escapeHtml(identifier)}</span>` : ""}
+              ${identifier ? `<span class="zdev-session-chip">paired: ${escapeHtml(identifier)}</span>` : ""}
             </p>
           </div>
-          <div class="zx-home-actions">
-            <button type="button" class="zx-sidebar-toggle" data-sidebar-toggle aria-label="Toggle sections">☰</button>
+          <div class="zdev-home-actions">
+            <button type="button" class="zdev-sidebar-toggle" data-sidebar-toggle aria-label="Toggle sections">☰</button>
             ${renderThemeButton()}
           </div>
         </header>
-        <div class="zx-app-layout">
-          <aside class="zx-sidebar" data-sidebar>
-            <div class="zx-sidebar-mobile-head">
+        <div class="zdev-app-layout">
+          <aside class="zdev-sidebar" data-sidebar>
+            <div class="zdev-sidebar-mobile-head">
               <strong>Sections</strong>
-              <button type="button" class="zx-sidebar-close" data-sidebar-close aria-label="Close sections">×</button>
+              <button type="button" class="zdev-sidebar-close" data-sidebar-close aria-label="Close sections">×</button>
             </div>
-            <section class="zx-sidebar-panel">
+            <section class="zdev-sidebar-panel">
               <h2>Sections</h2>
               ${renderSectionNav(sections, activeId)}
             </section>
-            <section class="zx-sidebar-panel">
+            <section class="zdev-sidebar-panel">
               <h2>Modules</h2>
-              <div class="zx-module-list" data-module-summary>
+              <div class="zdev-module-list" data-module-summary>
                 ${modules.length
         ? modules.map((module) => `
-                    <article class="zx-module-item">
+                    <article class="zdev-module-item">
                       <strong>${escapeHtml(module.title)}</strong>
                       <span>${escapeHtml(module.badge ?? "registered")}</span>
                     </article>
                   `).join("")
-        : `<p class="zx-empty">No extra modules registered.</p>`}
+        : `<p class="zdev-empty">No extra modules registered.</p>`}
               </div>
             </section>
           </aside>
-          <main class="zx-main">
+          <main class="zdev-main">
             ${renderSectionPanels(sections, activeId)}
           </main>
         </div>

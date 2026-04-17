@@ -196,7 +196,7 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url || "/", "http://127.0.0.1");
     const pathname = url.pathname;
 
-    if (pathname === "/favicon.ico" || pathname === "/__zerux/assets/favicon.ico") {
+    if (pathname === "/favicon.ico" || pathname.match(/^\/__[^/]+\/assets\/favicon\.ico$/)) {
         const asset = readDevAsset("favicon.ico");
         if (asset) {
             sendBuffer(res, asset, "image/x-icon");
@@ -204,7 +204,7 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         }
     }
 
-    if (pathname === "/favicon.png" || pathname === "/__zerux/assets/favicon.png") {
+    if (pathname === "/favicon.png" || pathname.match(/^\/__[^/]+\/assets\/favicon\.png$/)) {
         const asset = readDevAsset("favicon.png");
         if (asset) {
             sendBuffer(res, asset, "image/png");
@@ -212,7 +212,7 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         }
     }
 
-    if (pathname === "/robots.txt" || pathname === "/__zerux/assets/robots.txt") {
+    if (pathname === "/robots.txt" || pathname.match(/^\/__[^/]+\/assets\/robots\.txt$/)) {
         const asset = readDevAsset("robots.txt");
         if (asset) {
             sendBuffer(res, asset, "text/plain");
@@ -220,27 +220,19 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         }
     }
 
-    if (pathname === "/__zerux/assets/style.css") {
-        const asset = readDevAsset("style.css");
+    const globalAssetMatch = pathname.match(/^\/__([^/]+)\/assets\/(style\.css|app\.js)$/);
+    if (globalAssetMatch) {
+        const [, serviceName, assetName] = globalAssetMatch;
+        const asset = readDevAsset(assetName);
         if (!asset) {
             sendJson(res, { message: "Asset not found" }, 404);
             return;
         }
-        sendBuffer(res, asset, "text/css; charset=utf-8");
+        sendBuffer(res, asset, assetName === "style.css" ? "text/css; charset=utf-8" : "text/javascript; charset=utf-8");
         return;
     }
 
-    if (pathname === "/__zerux/assets/app.js") {
-        const asset = readDevAsset("app.js");
-        if (!asset) {
-            sendJson(res, { message: "Asset not found" }, 404);
-            return;
-        }
-        sendBuffer(res, asset, "text/javascript; charset=utf-8");
-        return;
-    }
-
-    if (pathname === "/") {
+    if (pathname === "/" || pathname === "/zdev" || pathname === "/zdev/") {
         if (!isLocalHost(host)) {
             // Root dashboard only accessible if at least one app allows this host
             const apps = readRegistry().apps;
@@ -267,7 +259,8 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         return;
     }
 
-    if (pathname === "/__zerux/events" && req.method === "POST") {
+    const globalEventsMatch = pathname.match(/^\/__([^/]+)\/events$/);
+    if (globalEventsMatch && req.method === "POST") {
         const body = toJsonBody(await readRequestBody(req));
         if (typeof body.app !== "string" || typeof body.type !== "string") {
             sendJson(res, { message: "Missing app name" }, 400);
@@ -289,12 +282,12 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
     const identifier = url.searchParams.get("identifier");
     const snapshot = normalizeSnapshot(app, { identifier });
 
-    if (remainingPath === "/__zerux/state" && req.method === "GET") {
+    if (remainingPath === `/__${app.serviceName}/state` && req.method === "GET") {
         sendJson(res, snapshot);
         return;
     }
 
-    if (remainingPath === "/__zerux/api/bootstrap" && req.method === "GET") {
+    if (remainingPath === `/__${app.serviceName}/api/bootstrap` && req.method === "GET") {
         sendJson(res, {
             snapshot: {
                 updatedAt: snapshot.updatedAt,
@@ -307,9 +300,13 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         return;
     }
 
-    const moduleAssetMatch = remainingPath.match(/^\/__zerux\/modules\/([^/]+)\/(style\.css|client\.js)$/);
+    const moduleAssetMatch = remainingPath.match(/^\/__([^/]+)\/modules\/([^/]+)\/(style\.css|client\.js)$/);
     if (moduleAssetMatch && req.method === "GET") {
-        const [, moduleId, assetName] = moduleAssetMatch;
+        const [, serviceName, moduleId, assetName] = moduleAssetMatch;
+        if (serviceName !== app.serviceName) {
+             sendJson(res, { message: "Service mismatch" }, 403);
+             return;
+        }
         const asset = await readModuleAsset(
             app,
             snapshot,
@@ -329,9 +326,13 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         return;
     }
 
-    const moduleApiMatch = remainingPath.match(/^\/__zerux\/modules\/([^/]+)\/api\/([^/]+)$/);
+    const moduleApiMatch = remainingPath.match(/^\/__([^/]+)\/modules\/([^/]+)\/api\/([^/]+)$/);
     if (moduleApiMatch) {
-        const [, moduleId, handlerName] = moduleApiMatch;
+        const [, serviceName, moduleId, handlerName] = moduleApiMatch;
+        if (serviceName !== app.serviceName) {
+            sendJson(res, { message: "Service mismatch" }, 403);
+            return;
+        }
         const requestBody = req.method === "GET" || req.method === "HEAD"
             ? {}
             : toJsonBody(await readRequestBody(req));
@@ -356,8 +357,8 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         return;
     }
 
-    if (remainingPath.startsWith("/__zerux/api/")) {
-        const apiName = remainingPath.slice("/__zerux/api/".length);
+    if (remainingPath.startsWith(`/__${app.serviceName}/api/`)) {
+        const apiName = remainingPath.slice(`/__${app.serviceName}/api/`.length);
         const handler = resolveCustomApiHandler(apiName);
         if (!handler) {
             sendJson(res, { message: "API handler not found" }, 404);
@@ -367,7 +368,7 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         return;
     }
 
-    if (remainingPath === "/__zerux/client-event" && req.method === "POST") {
+    if (remainingPath === `/__${app.serviceName}/client-event` && req.method === "POST") {
         const payload = toJsonBody(await readRequestBody(req));
         appendSnapshotEvent(app.dataFilePath, payload);
         broadcastEvent(app.routeName, {
@@ -379,7 +380,7 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
         return;
     }
 
-    const isAsset = remainingPath.startsWith("/__zerux/");
+    const isAsset = remainingPath.startsWith(`/__${app.serviceName}/`);
     if (!isAsset && req.method === "GET") {
         const security = createDocumentSecurity();
         const sectionId = remainingPath.replace(/^\//, "") || null;
@@ -463,7 +464,7 @@ export const publishSharedDevEvent = async (port: number, event: SharedDevEvent)
             {
                 hostname: "127.0.0.1",
                 port,
-                path: "/__zerux/events",
+                path: `/__${event.serviceName || "zdev"}/events`,
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

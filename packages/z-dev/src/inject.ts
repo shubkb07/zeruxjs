@@ -1,17 +1,19 @@
 import type { IncomingMessage } from "node:http";
 
-interface DevClientScriptOptions {
+export interface DevClientScriptOptions {
   routeName: string;
   devServerUrl: string;
   allowedDevDomain?: string | null;
   devPortLessAlias: { value: string | null | false };
+  serviceName: string;
 }
 
-const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPortLessAlias }: DevClientScriptOptions) => `<script data-zerux-dev-client="true">
+const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPortLessAlias, serviceName }: DevClientScriptOptions) => `<script data-zdev-client="true">
 (() => {
-  if (window.__ZERUX_DEV_CLIENT__) return;
-  window.__ZERUX_DEV_CLIENT__ = true;
+  if (window.__ZDEV_CLIENT__) return;
+  window.__ZDEV_CLIENT__ = true;
   const app = '${routeName}';
+  const service = '${serviceName}';
   const devMainServerUrl = '${devServerUrl}';
   const allowedDevDomain = '${allowedDevDomain}';
   const devPortLessAlias = '${devPortLessAlias.value}';
@@ -34,9 +36,9 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
   };
   const devServerUrl = resolveDevServerUrl();
   const devServer = new URL(devServerUrl);
-  const base = devServer.origin + '/' + app + '/__zerux';
-  const tabIdentifierStorageKey = 'zerux:devtools:tabid:' + app;
-  const themeStorageKey = 'zerux:devtools:theme';
+  const base = devServer.origin + '/' + app + '/__' + service;
+  const tabIdentifierStorageKey = 'zdev:devtools:tabid:' + app;
+  const themeStorageKey = 'zdev:devtools:theme';
   const getTabIdentifier = () => {
     let current = sessionStorage.getItem(tabIdentifierStorageKey);
     if (current) return current;
@@ -51,10 +53,10 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
   const getEffectiveTheme = () =>
     getStoredThemeMode() === 'system' ? getSystemTheme() : getStoredThemeMode();
   const wsProtocol = devServer.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = wsProtocol + '//' + devServer.host + '/__zerux/ws?app=' + encodeURIComponent(app) + '&client=page&identifier=' + encodeURIComponent(tabIdentifier);
+  const wsUrl = wsProtocol + '//' + devServer.host + '/__' + service + '/ws?app=' + encodeURIComponent(app) + '&client=page&identifier=' + encodeURIComponent(tabIdentifier);
   const devtoolsUrl = devServer.origin + '/' + app;
   const pairedDevtoolsUrl = devtoolsUrl + '?identifier=' + encodeURIComponent(tabIdentifier);
-  const drawerStorageKey = 'zerux:devtools:drawer:' + app;
+  const drawerStorageKey = 'zdev:devtools:drawer:' + app;
   const state = {
     warnings: [],
     errors: [],
@@ -69,23 +71,23 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
   };
 
   const styles = document.createElement('style');
-  styles.id = 'zerux-dev-style';
+  styles.id = 'zdev-style';
   styles.textContent = \`
-    #zerux-dev-button,
-    #zerux-dev-drawer,
-    #zerux-dev-error-screen {
-      --zx-bg: rgba(9,10,13,0.96);
-      --zx-bg-soft: rgba(17,18,23,0.94);
-      --zx-panel: rgba(7,8,11,0.985);
-      --zx-text: #edf0f5;
-      --zx-muted: #9ca5b3;
-      --zx-border: rgba(205,213,225,0.16);
-      --zx-accent: #bcc5d0;
-      --zx-warm: #c99d4d;
+    #zdev-button,
+    #zdev-drawer,
+    #zdev-error-screen {
+      --zdev-bg: rgba(9,10,13,0.96);
+      --zdev-bg-soft: rgba(17,18,23,0.94);
+      --zdev-panel: rgba(7,8,11,0.985);
+      --zdev-text: #edf0f5;
+      --zdev-muted: #9ca5b3;
+      --zdev-border: rgba(205,213,225,0.16);
+      --zdev-accent: #bcc5d0;
+      --zdev-warm: #c99d4d;
     }
-    #zerux-dev-button[data-theme="light"],
-    #zerux-dev-drawer[data-theme="light"],
-    #zerux-dev-error-screen[data-theme="light"] {
+    #zdev-button[data-theme="light"],
+    #zdev-drawer[data-theme="light"],
+    #zdev-error-screen[data-theme="light"] {
       --zx-bg: rgba(255,255,255,0.96);
       --zx-bg-soft: rgba(250,246,239,0.98);
       --zx-panel: rgba(251,252,255,0.995);
@@ -95,7 +97,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       --zx-accent: #356d9d;
       --zx-warm: #b88a3b;
     }
-    #zerux-dev-button {
+    #zdev-button {
       position: fixed;
       right: 16px;
       bottom: 16px;
@@ -110,7 +112,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       z-index: 2147483647;
       box-shadow: 0 16px 30px rgba(0,0,0,0.28);
     }
-    #zerux-dev-badge {
+    #zdev-badge {
       position: absolute;
       top: -6px;
       right: -6px;
@@ -123,7 +125,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       font: 700 11px/20px sans-serif;
       display: none;
     }
-    #zerux-dev-drawer {
+    #zdev-drawer {
       position: fixed;
       top: 76px;
       right: 24px;
@@ -138,12 +140,12 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       display: none;
       grid-template-rows: auto 1fr;
     }
-    #zerux-dev-drawer.zerux-open { display: grid; }
-    #zerux-dev-drawer.zerux-dragging {
+    #zdev-drawer.zdev-open { display: grid; }
+    #zdev-drawer.zdev-dragging {
       user-select: none;
       cursor: grabbing;
     }
-    #zerux-dev-drawer-bar {
+    #zdev-drawer-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -153,27 +155,27 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       background: var(--zx-bg);
       cursor: grab;
     }
-    #zerux-dev-drawer-title {
+    #zdev-drawer-title {
       min-width: 0;
     }
-    #zerux-dev-drawer-title strong {
+    #zdev-drawer-title strong {
       display: block;
       color: var(--zx-text);
       font: 700 13px/1.3 sans-serif;
     }
-    #zerux-dev-drawer-title span {
+    #zdev-drawer-title span {
       display: block;
       margin-top: 2px;
       color: var(--zx-muted);
       font: 500 11px/1.3 sans-serif;
     }
-    #zerux-dev-drawer-actions {
+    #zdev-drawer-actions {
       display: flex;
       align-items: center;
       gap: 8px;
       flex-shrink: 0;
     }
-    .zerux-dev-action {
+    .zdev-action {
       border: 1px solid var(--zx-border);
       border-radius: 999px;
       background: var(--zx-bg-soft);
@@ -182,23 +184,23 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       font: 600 11px/1 sans-serif;
       cursor: pointer;
     }
-    #zerux-dev-drawer-close {
+    #zdev-drawer-close {
       width: 28px;
       height: 28px;
       padding: 0;
       font: 700 16px/1 sans-serif;
     }
-    #zerux-dev-drawer-main {
+    #zdev-drawer-main {
       display: block;
       height: 100%;
     }
-    #zerux-dev-frame {
+    #zdev-frame {
       width: 100%;
       height: 100%;
       border: 0;
       background: var(--zx-panel);
     }
-    #zerux-dev-error-screen {
+    #zdev-error-screen {
       position: fixed;
       inset: 0;
       z-index: 2147483645;
@@ -210,8 +212,8 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       overflow: auto;
       padding: 32px;
     }
-    #zerux-dev-error-screen.zerux-open { display: block; }
-    #zerux-dev-error-inner {
+    #zdev-error-screen.zdev-open { display: block; }
+    #zdev-error-inner {
       max-width: 1100px;
       margin: 0 auto;
       border: 1px solid rgba(201,157,77,0.2);
@@ -220,26 +222,26 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       box-shadow: 0 24px 90px rgba(0,0,0,0.36);
       overflow: hidden;
     }
-    #zerux-dev-error-head {
+    #zdev-error-head {
       padding: 20px 24px;
       border-bottom: 1px solid rgba(201,157,77,0.16);
     }
-    #zerux-dev-error-head h2 {
+    #zdev-error-head h2 {
       margin: 0;
       font: 800 30px/1.1 sans-serif;
     }
-    #zerux-dev-error-head p {
+    #zdev-error-head p {
       margin: 8px 0 0;
       color: var(--zx-muted);
       font: 500 14px/1.5 sans-serif;
     }
-    #zerux-dev-error-actions {
+    #zdev-error-actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       margin-top: 16px;
     }
-    #zerux-dev-error-actions button {
+    #zdev-error-actions button {
       border: 1px solid rgba(201,157,77,0.22);
       border-radius: 999px;
       background: rgba(31, 25, 18, 0.96);
@@ -248,12 +250,12 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       cursor: pointer;
       font: 600 13px/1 sans-serif;
     }
-    #zerux-dev-error-body {
+    #zdev-error-body {
       padding: 20px 24px 24px;
       display: grid;
       gap: 12px;
     }
-    #zerux-dev-error-stack {
+    #zdev-error-stack {
       margin: 0;
       padding: 16px;
       border-radius: 14px;
@@ -264,7 +266,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       word-break: break-word;
     }
     @media (max-width: 980px) {
-      #zerux-dev-drawer {
+      #zdev-drawer {
         inset: 0;
         width: 100vw;
         height: 100vh;
@@ -278,54 +280,54 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
   document.head.appendChild(styles);
 
   const button = document.createElement('button');
-  button.id = 'zerux-dev-button';
+  button.id = 'zdev-button';
   button.type = 'button';
   button.textContent = 'Z';
   const badge = document.createElement('span');
-  badge.id = 'zerux-dev-badge';
+  badge.id = 'zdev-badge';
   button.appendChild(badge);
 
   const drawer = document.createElement('section');
-  drawer.id = 'zerux-dev-drawer';
+  drawer.id = 'zdev-drawer';
   drawer.innerHTML = \`
-    <div id="zerux-dev-drawer-bar">
-      <div id="zerux-dev-drawer-title">
-        <strong>Zerux Devtools</strong>
+    <div id="zdev-drawer-bar">
+      <div id="zdev-drawer-title">
+        <strong>\${service ? service.charAt(0).toUpperCase() + service.slice(1) : 'Zdev'} Devtools</strong>
         <span>\${location.pathname}</span>
       </div>
-      <div id="zerux-dev-drawer-actions">
-        <button type="button" class="zerux-dev-action" id="zerux-dev-open-tab">Open devtools</button>
-        <button type="button" class="zerux-dev-action" id="zerux-dev-open-current-tab">Open this page</button>
-        <button type="button" class="zerux-dev-action" id="zerux-dev-drawer-close" aria-label="Close">×</button>
+      <div id="zdev-drawer-actions">
+        <button type="button" class="zdev-action" id="zdev-open-tab">Open devtools</button>
+        <button type="button" class="zdev-action" id="zdev-open-current-tab">Open this page</button>
+        <button type="button" class="zdev-action" id="zdev-drawer-close" aria-label="Close">×</button>
       </div>
     </div>
-    <div id="zerux-dev-drawer-main">
-      <iframe id="zerux-dev-frame" src="\${pairedDevtoolsUrl}" title="Zerux Devtools"></iframe>
+    <div id="zdev-drawer-main">
+      <iframe id="zdev-frame" src="\${pairedDevtoolsUrl}" title="Devtools"></iframe>
     </div>
   \`;
 
   const errorScreen = document.createElement('section');
-  errorScreen.id = 'zerux-dev-error-screen';
+  errorScreen.id = 'zdev-error-screen';
   errorScreen.innerHTML = \`
-    <div id="zerux-dev-error-inner">
-      <div id="zerux-dev-error-head">
+    <div id="zdev-error-inner">
+      <div id="zdev-error-head">
         <h2>Application Error</h2>
-        <p id="zerux-dev-error-message">A runtime error occurred while rendering this page.</p>
-        <div id="zerux-dev-error-actions">
-          <button type="button" id="zerux-dev-open-drawer">Open diagnostics</button>
-          <button type="button" id="zerux-dev-dismiss-error">Dismiss overlay</button>
+        <p id="zdev-error-message">A runtime error occurred while rendering this page.</p>
+        <div id="zdev-error-actions">
+          <button type="button" id="zdev-open-drawer">Open diagnostics</button>
+          <button type="button" id="zdev-dismiss-error">Dismiss overlay</button>
         </div>
       </div>
-      <div id="zerux-dev-error-body">
-        <pre id="zerux-dev-error-stack">No stack trace available.</pre>
+      <div id="zdev-error-body">
+        <pre id="zdev-error-stack">No stack trace available.</pre>
       </div>
     </div>
   \`;
 
-  const drawerBar = drawer.querySelector('#zerux-dev-drawer-bar');
-  const errorMessage = errorScreen.querySelector('#zerux-dev-error-message');
-  const errorStack = errorScreen.querySelector('#zerux-dev-error-stack');
-  const frame = drawer.querySelector('#zerux-dev-frame');
+  const drawerBar = drawer.querySelector('#zdev-drawer-bar');
+  const errorMessage = errorScreen.querySelector('#zdev-error-message');
+  const errorStack = errorScreen.querySelector('#zdev-error-stack');
+  const frame = drawer.querySelector('#zdev-frame');
   
   let isFrameLoaded = false;
   
@@ -335,12 +337,12 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
     if (!frame || !frame.contentWindow) return;
     
     if (!isFrameLoaded) {
-      console.log('[Zerux] Iframe not loaded yet, skipping postMessage');
+      console.log('[Zdev] Iframe not loaded yet, skipping postMessage');
       return;
     }
     
     frame.contentWindow.postMessage({
-      type: 'zerux:theme-sync',
+      type: 'zdev:theme-sync',
       mode: getStoredThemeMode(),
       effectiveTheme: getEffectiveTheme()
     }, devServer.origin);
@@ -368,12 +370,12 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       isFrameLoaded = false; // Reset since we're changing src
       frame.setAttribute('src', pairedDevtoolsUrl);
     }
-    drawer.classList.add('zerux-open');
+    drawer.classList.add('zdev-open');
     // Don't call postThemeToFrame here - wait for load event
   };
   const closeDrawer = () => {
     state.drawerOpen = false;
-    drawer.classList.remove('zerux-open');
+    drawer.classList.remove('zdev-open');
   };
   let dragState = null;
   const saveDrawerPosition = () => {
@@ -435,7 +437,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
     const links = Array.from(document.querySelectorAll('link[rel="stylesheet"][href]'));
 
     links.forEach((link) => {
-      if (link.id === 'zerux-dev-style') return;
+      if (link.id === 'zdev-style') return;
       try {
         const href = link.getAttribute('href');
         if (!href) return;
@@ -446,11 +448,11 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
     });
   };
   const stripInjectedDevNodes = (root) => {
-    root.querySelectorAll('#zerux-dev-button, #zerux-dev-drawer, #zerux-dev-error-screen, script[data-zerux-dev-client="true"]').forEach((node) => node.remove());
+    root.querySelectorAll('#zdev-button, #zdev-drawer, #zdev-error-screen, script[data-zdev-client="true"]').forEach((node) => node.remove());
   };
   const executeScripts = (root) => {
     root.querySelectorAll('script').forEach((script) => {
-      if (script.hasAttribute('data-zerux-dev-client')) {
+      if (script.hasAttribute('data-zdev-client')) {
         script.remove();
         return;
       }
@@ -469,7 +471,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       headers: {
         'Accept': 'text/html',
         'Cache-Control': 'no-cache',
-        'X-Zerux-Hot-Update': version || new Date().toISOString()
+        'X-Zdev-Hot-Update': version || new Date().toISOString()
       }
     });
 
@@ -486,9 +488,9 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
     stripInjectedDevNodes(parsed);
 
     const preservedNodes = [
-      document.getElementById('zerux-dev-button'),
-      document.getElementById('zerux-dev-drawer'),
-      document.getElementById('zerux-dev-error-screen')
+      document.getElementById('zdev-button'),
+      document.getElementById('zdev-drawer'),
+      document.getElementById('zdev-error-screen')
     ].filter(Boolean);
 
     document.title = parsed.title || document.title;
@@ -503,7 +505,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
     const nextNodes = Array.from(parsed.body.childNodes).map((node) => document.importNode(node, true));
     document.body.replaceChildren(...nextNodes, ...preservedNodes);
     executeScripts(document.body);
-    window.dispatchEvent(new CustomEvent('zerux:hot-update', {
+    window.dispatchEvent(new CustomEvent('zdev:hot-update', {
       detail: {
         strategy: 'document',
         updatedAt: version || new Date().toISOString()
@@ -592,7 +594,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
   const showErrorOverlay = (entry) => {
     errorMessage.textContent = entry.message || 'Application Error';
     errorStack.textContent = [entry.message, entry.source, entry.stack].filter(Boolean).join('\\n\\n');
-    errorScreen.classList.add('zerux-open');
+    errorScreen.classList.add('zdev-open');
   };
   const recordWarning = (entry) => {
     state.warnings.push(entry);
@@ -615,30 +617,30 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
     openDrawer();
   });
 
-  drawer.querySelector('#zerux-dev-drawer-close')?.addEventListener('click', () => {
+  drawer.querySelector('#zdev-drawer-close')?.addEventListener('click', () => {
     closeDrawer();
   });
-  drawer.querySelector('#zerux-dev-drawer-close')?.addEventListener('pointerdown', (event) => {
+  drawer.querySelector('#zdev-drawer-close')?.addEventListener('pointerdown', (event) => {
     event.stopPropagation();
   });
-  drawer.querySelector('#zerux-dev-open-tab')?.addEventListener('click', () => {
+  drawer.querySelector('#zdev-open-tab')?.addEventListener('click', () => {
     window.open(devtoolsUrl, '_blank', 'noopener,noreferrer');
   });
-  drawer.querySelector('#zerux-dev-open-current-tab')?.addEventListener('click', () => {
+  drawer.querySelector('#zdev-open-current-tab')?.addEventListener('click', () => {
     window.open(pairedDevtoolsUrl, '_blank', 'noopener,noreferrer');
   });
   
   // Mark iframe as loaded and send initial theme
   frame?.addEventListener('load', () => {
-    console.log('[Zerux] Iframe loaded from:', frame.src);
+    console.log('[Zdev] Iframe loaded from:', frame.src);
     isFrameLoaded = true;
     postThemeToFrame();
   });
   
-  drawer.querySelector('#zerux-dev-open-tab')?.addEventListener('pointerdown', (event) => {
+  drawer.querySelector('#zdev-open-tab')?.addEventListener('pointerdown', (event) => {
     event.stopPropagation();
   });
-  drawer.querySelector('#zerux-dev-open-current-tab')?.addEventListener('pointerdown', (event) => {
+  drawer.querySelector('#zdev-open-current-tab')?.addEventListener('pointerdown', (event) => {
     event.stopPropagation();
   });
   drawerBar?.addEventListener('pointerdown', (event) => {
@@ -649,7 +651,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
       offsetX: event.clientX - rect.left,
       offsetY: event.clientY - rect.top
     };
-    drawer.classList.add('zerux-dragging');
+    drawer.classList.add('zdev-dragging');
     drawerBar.setPointerCapture(event.pointerId);
   });
 
@@ -666,7 +668,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
 
   drawerBar?.addEventListener('pointerup', (event) => {
     dragState = null;
-    drawer.classList.remove('zerux-dragging');
+    drawer.classList.remove('zdev-dragging');
     if (drawerBar.hasPointerCapture(event.pointerId)) {
       drawerBar.releasePointerCapture(event.pointerId);
     }
@@ -675,14 +677,14 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
 
   drawerBar?.addEventListener('pointercancel', () => {
     dragState = null;
-    drawer.classList.remove('zerux-dragging');
+    drawer.classList.remove('zdev-dragging');
   });
 
-  errorScreen.querySelector('#zerux-dev-open-drawer')?.addEventListener('click', () => {
+  errorScreen.querySelector('#zdev-open-drawer')?.addEventListener('click', () => {
     openDrawer();
   });
-  errorScreen.querySelector('#zerux-dev-dismiss-error')?.addEventListener('click', () => {
-    errorScreen.classList.remove('zerux-open');
+  errorScreen.querySelector('#zdev-dismiss-error')?.addEventListener('click', () => {
+    errorScreen.classList.remove('zdev-open');
   });
 
   window.addEventListener('DOMContentLoaded', () => {
@@ -695,7 +697,7 @@ const buildInjectedClient = ({ routeName, devServerUrl, allowedDevDomain, devPor
   });
   window.addEventListener('message', (event) => {
     if (event.origin !== devServer.origin) return;
-    if (!event.data || event.data.type !== 'zerux:theme-sync') return;
+    if (!event.data || event.data.type !== 'zdev:theme-sync') return;
 
     const nextMode = event.data.mode;
     if (nextMode === 'system' || nextMode === 'dark' || nextMode === 'light') {

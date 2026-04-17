@@ -7,15 +7,15 @@ const section: DevtoolsSectionDefinition = {
   order: 60,
   render() {
     return `
-      <section class="zx-panel-stack">
-        <article class="zx-card">
-          <header class="zx-card-head">
+      <section class="zdev-panel-stack">
+        <article class="zdev-card">
+          <header class="zdev-card-head">
             <div>
-              <span class="zx-card-label">Plugin Wiring</span>
+              <span class="zdev-card-label">Plugin Wiring</span>
               <h3>Plugin and Module Surface</h3>
             </div>
           </header>
-          <ul class="zx-list">
+          <ul class="zdev-list">
             <li>Register UI or data modules with <code>registerDevtoolsModule()</code>.</li>
             <li>Expose custom endpoints with <code>registerDevtoolsApiHandler()</code>.</li>
             <li>Attach websocket behavior with <code>registerDevtoolsServerChannel()</code>.</li>

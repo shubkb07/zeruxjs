@@ -10,6 +10,10 @@ export interface SharedDevRegistrationOptions {
     runtimeManifestPath?: string;
     allowedDomains?: string | string[];
     allowedDevDomain?: string;
+    serviceName?: string;
+    devtools?: {
+        modules: Array<string | { package: string; enabled?: boolean; options?: Record<string, unknown> }>;
+    };
 }
 
 export interface SharedDevRegistration {
@@ -22,6 +26,10 @@ export interface SharedDevRegistration {
     runtimeManifestPath: string | null;
     allowedDomains: string | string[];
     allowedDevDomain: string | null;
+    serviceName: string;
+    devtools: {
+        modules: Array<string | { package: string; enabled?: boolean; options?: Record<string, unknown> }>;
+    };
     startedAt: string;
     updatedAt: string;
 }
@@ -46,6 +54,7 @@ export interface SharedDevStartResult {
 export interface SharedDevEvent {
     app: string;
     type: string;
+    serviceName?: string;
     payload?: Record<string, unknown>;
     timestamp?: string;
 }

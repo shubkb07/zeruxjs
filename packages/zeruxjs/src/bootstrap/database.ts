@@ -74,7 +74,7 @@ const DB_FACADE_EXPORT_KEYS = [
     "native"
 ] as const;
 
-const DB_VIRTUAL_DIR = path.join(process.cwd(), ".zerux", "virtual", "db");
+const DB_VIRTUAL_DIR = path.join(process.cwd(), ".zdev", "virtual", "db");
 const RESERVED_EXPORT_NAMES = new Set(["delete"]);
 
 const ensureVirtualDbDir = () => {
@@ -93,7 +93,7 @@ const writeVirtualDbTypes = (fileName: string, source: string) => {
 
 const appendExportBinding = (lines: string[], exportName: string, expression: string) => {
     if (RESERVED_EXPORT_NAMES.has(exportName)) {
-        const localName = `__zerux_${exportName}`;
+        const localName = `__zdev_${exportName}`;
         lines.push(`const ${localName} = ${expression};`);
         lines.push(`export { ${localName} as ${exportName} };`);
         return;
@@ -104,7 +104,7 @@ const appendExportBinding = (lines: string[], exportName: string, expression: st
 
 const appendExportDeclaration = (lines: string[], exportName: string, typeExpression: string) => {
     if (RESERVED_EXPORT_NAMES.has(exportName)) {
-        const localName = `__zerux_${exportName}`;
+        const localName = `__zdev_${exportName}`;
         lines.push(`declare const ${localName}: ${typeExpression};`);
         lines.push(`export { ${localName} as ${exportName} };`);
         return;

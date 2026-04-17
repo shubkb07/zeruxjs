@@ -1,5 +1,5 @@
-const { config = {}, bootstrap: initialBootstrap = null } = window.zerux || {};
-const themeStorageKey = "zerux:devtools:theme";
+const { config = {}, bootstrap: initialBootstrap = null } = window.zdev || {};
+const themeStorageKey = "zdev:devtools:theme";
 const themeModes = ["system", "dark", "light"];
 let forcedThemeMode = null;
 const moduleMounts = new Map();
@@ -77,7 +77,7 @@ const getSavedTheme = () => localStorage.getItem(themeStorageKey) || "system";
 const broadcastThemeToParent = (mode) => {
   if (window.parent === window) return;
   window.parent.postMessage({
-    type: "zerux:theme-sync",
+    type: "zdev:theme-sync",
     mode,
     effectiveTheme: mode === "system" ? getSystemTheme() : mode
   }, "*");
@@ -109,7 +109,7 @@ const setupThemeToggle = () => {
     }
   });
   window.addEventListener("message", (event) => {
-    if (!event.data || event.data.type !== "zerux:theme-sync") return;
+    if (!event.data || event.data.type !== "zdev:theme-sync") return;
     const nextMode = event.data.mode;
     const nextEffectiveTheme = event.data.effectiveTheme;
     if (nextMode === "system" || nextMode === "dark" || nextMode === "light") {
@@ -150,26 +150,39 @@ const renderPages = (snapshot) => {
   if (!list) return;
   list.innerHTML = (snapshot.routes || []).length
     ? snapshot.routes.map((route) => `
-      <div class="zx-route-item">
+      <div class="zdev-route-item">
         <strong>${escapeHtml(route.path)}</strong>
         <span>${escapeHtml((route.methods || []).join(", "))}</span>
       </div>
     `).join("")
-    : `<p class="zx-empty">No routes found.</p>`;
+    : `<p class="zdev-empty">No routes found.</p>`;
 };
 
 const renderModules = (modules) => {
   const root = document.querySelector("[data-modules-list]");
-  if (!root) return;
-  root.innerHTML = modules.length
-    ? modules.map((module) => `
-      <article class="zx-module-card">
-        <strong>${escapeHtml(module.title)}</strong>
-        <span>${escapeHtml(module.description || "No description provided.")}</span>
-        <small>${escapeHtml(module.packageName || module.badge || "custom module")}</small>
-      </article>
-    `).join("")
-    : `<p class="zx-empty">No registered devtools modules.</p>`;
+  if (root) {
+    root.innerHTML = modules.length
+      ? modules.map((module) => `
+        <article class="zdev-module-card">
+          <strong>${escapeHtml(module.title)}</strong>
+          <span>${escapeHtml(module.description || "No description provided.")}</span>
+          <small>${escapeHtml(module.packageName || module.badge || "custom module")}</small>
+        </article>
+      `).join("")
+      : `<p class="zdev-empty">No registered devtools modules.</p>`;
+  }
+
+  const summary = document.querySelector("[data-module-summary]");
+  if (summary) {
+    summary.innerHTML = modules.length
+      ? modules.map((module) => `
+          <article class="zdev-module-item">
+            <strong>${escapeHtml(module.title)}</strong>
+            <span>${escapeHtml(module.badge || "registered")}</span>
+          </article>
+        `).join("")
+      : `<p class="zdev-empty">No extra modules registered.</p>`;
+  }
 };
 
 const renderDiagnostics = (snapshot) => {
@@ -180,7 +193,7 @@ const renderDiagnostics = (snapshot) => {
           const css = event.type === "error" ? "event-error" : event.type === "warn" ? "event-warn" : "event-info";
           return `<code class="${css}">[${escapeHtml(event.type || "info")}] ${escapeHtml(event.message || JSON.stringify(event))}</code>`;
         }).join("")
-      : `<div class="zx-empty">No client events yet.</div>`;
+      : `<div class="zdev-empty">No client events yet.</div>`;
   }
   const logs = document.getElementById("logs");
   if (logs) {
@@ -189,7 +202,7 @@ const renderDiagnostics = (snapshot) => {
 };
 
 const createModuleApi = (moduleId) => async (name, options = {}) => {
-  const url = new URL(`/${applicationState.app}/__zerux/modules/${moduleId}/api/${name}`, window.location.origin);
+  const url = new URL(`/${applicationState.app}/__${window.zdev.service}/modules/${moduleId}/api/${name}`, window.location.origin);
   if (applicationState.identifier) {
     url.searchParams.set("identifier", applicationState.identifier);
   }
@@ -207,7 +220,7 @@ const createModuleApi = (moduleId) => async (name, options = {}) => {
 
 const createDevtoolsSocket = () => {
   const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = new URL(`${wsProtocol}//${location.host}/__zerux/ws`);
+  const wsUrl = new URL(`${wsProtocol}//${location.host}/__${window.zdev.service}/ws`);
   wsUrl.searchParams.set("app", applicationState.app);
   wsUrl.searchParams.set("client", "devtools");
   if (applicationState.identifier) {
@@ -278,13 +291,13 @@ const mountModulePanel = async (panel, moduleData) => {
 
   const shadowRoot = host.attachShadow({ mode: "open" });
   const wrapper = document.createElement("div");
-  wrapper.className = "zx-module-surface";
+  wrapper.className = "zdev-module-surface";
 
   const baseStyle = document.createElement("style");
   baseStyle.textContent = `
     :host { color: inherit; }
     *, *::before, *::after { box-sizing: border-box; }
-    .zx-module-surface { color: inherit; font: inherit; }
+    .zdev-module-surface { color: inherit; font: inherit; }
   `;
   shadowRoot.append(baseStyle, wrapper);
   wrapper.append(template.content.cloneNode(true));
@@ -357,7 +370,7 @@ const setActiveSection = async (id, skipHistory = false) => {
 };
 
 const setupSectionNavigation = (sections) => {
-  const shell = document.querySelector(".zx-app-shell");
+  const shell = document.querySelector(".zdev-app-shell");
   const closeSidebar = () => shell?.classList.remove("is-sidebar-open");
   document.querySelectorAll("[data-section-link]").forEach((link) => {
     link.addEventListener("click", async () => {
@@ -400,7 +413,7 @@ const setupApplication = async () => {
   applicationState.app = app;
   applicationState.identifier = config.identifier || null;
 
-  const bootstrapUrl = new URL(`/${app}/__zerux/api/bootstrap`, window.location.origin);
+  const bootstrapUrl = new URL(`/${app}/__${window.zdev.service}/api/bootstrap`, window.location.origin);
   if (applicationState.identifier) bootstrapUrl.searchParams.set("identifier", applicationState.identifier);
 
   const refresh = async () => {
@@ -419,7 +432,7 @@ const setupApplication = async () => {
     };
     
     // Sync with global window object
-    window.zerux.bootstrap = applicationState.bootstrap;
+    window.zdev.bootstrap = applicationState.bootstrap;
     
     const { snapshot, modules = [] } = applicationState.bootstrap;
     renderOverview(snapshot, modules);
@@ -437,16 +450,21 @@ const setupApplication = async () => {
 
   if (!applicationState.bootstrap) {
     applicationState.bootstrap = { ...config };
-    window.zerux.bootstrap = applicationState.bootstrap;
+    window.zdev.bootstrap = applicationState.bootstrap;
   }
 
   setupSectionNavigation(config.sections || []);
+  renderModules(config.modules || []);
+  if (config.snapshot) {
+    renderOverview(config.snapshot, config.modules || []);
+  }
+
   if (config.modules) {
     const initialId = config.sectionId || (config.sections && config.sections[0]?.id);
     preloadModules(config.modules, initialId);
   }
   document.querySelector("[data-sidebar-toggle]")?.addEventListener("click", () => {
-    document.querySelector(".zx-app-shell")?.classList.toggle("is-sidebar-open");
+    document.querySelector(".zdev-app-shell")?.classList.toggle("is-sidebar-open");
   });
   
   if (applicationState.bootstrap.snapshot) {

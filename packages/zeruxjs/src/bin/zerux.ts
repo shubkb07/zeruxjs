@@ -20,7 +20,7 @@ const addCommands = () => {
         {
             description: "Start development server",
             docs: "Runs the development server with hot reload support.",
-            example: "npx zerux dev"
+            example: "npx zdev dev"
         }
     );
 
@@ -34,7 +34,7 @@ const addCommands = () => {
         {
             description: "Start production server",
             docs: "Runs the built application in production mode.",
-            example: "npx zerux start"
+            example: "npx zdev start"
         }
     );
 
@@ -47,7 +47,7 @@ const addCommands = () => {
         {
             description: "Build the project",
             docs: "Compiles the project for production deployment.",
-            example: "npx zerux build"
+            example: "npx zdev build"
         }
     );
 
@@ -104,7 +104,7 @@ const addCommands = () => {
             {
                 description: `Run ${command}`,
                 docs: `Executes ${command} with optional flags like :fix and :watch.`,
-                example: `npx zerux ${command}`
+                example: `npx zdev ${command}`
             }
         );
     }

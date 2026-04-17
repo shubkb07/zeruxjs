@@ -533,7 +533,7 @@ const createRuntime = async (
                 const allowedDevDomain = config.server?.allowedDevDomain ?? config.allowedDevDomain;
 
                 if (!isAllowedHost(host, allowedDomains, allowedDevDomain)) {
-                    const message = `Access from unallowed host "${host}" is restricted. Please add it to "allowedDomains" in your zerux.config.ts if this is intended.`;
+                    const message = `Access from unallowed host "${host}" is restricted. Please add it to "allowedDomains" in your zdev.config.ts if this is intended.`;
                     if (mode === "dev") {
                         logger.error(message);
                         sendResponse(res, { error: "Unallowed Host", message }, 400);

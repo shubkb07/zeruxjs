@@ -27,7 +27,7 @@ export async function resolve(
     try {
         if (specifier === "db" || specifier.startsWith("db:")) {
             const identifier = specifier === "db" ? "default" : specifier.slice(3);
-            const modulePath = path.join(process.cwd(), ".zerux", "virtual", "db", `${identifier}.mjs`);
+            const modulePath = path.join(process.cwd(), ".zdev", "virtual", "db", `${identifier}.mjs`);
             return nextResolve(pathToFileURL(modulePath).href, context);
         }
 

@@ -41,7 +41,7 @@ export class Logger {
 
   constructor(options: LoggerOptions = {}) {
     // Resolve log file location
-    const defaultPath = join(process.cwd(), ".zerux", "log", "app.log");
+    const defaultPath = join(process.cwd(), ".zdev", "log", "app.log");
     this.filePath = options.filePath ?? process.env.ZERUX_LOG_PATH ?? defaultPath;
     this.fileLevel = options.fileLevel ?? "debug";
 

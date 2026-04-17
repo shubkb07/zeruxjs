@@ -12,7 +12,7 @@
   "private": true,
   "scripts": {
     "build": "zerux build",
-    "dev": "zerux dev -p 3010",
+    "dev": "zerux dev -p 3011",
     "start": "zerux start"
   },
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",

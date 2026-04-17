@@ -60,7 +60,7 @@ export const writeRegistry = (registry: SharedDevRegistry) => {
     writeJsonFile(SHARED_DEV_FILE, registry);
 };
 
-const resolveRouteName = (appName: string, apps: SharedDevRegistration[], rootDir: string) => {
+const resolveRouteName = (appName: string, apps: SharedDevRegistration[], rootDir: string, serviceName: string) => {
     const sanitized = sanitizeAppName(appName);
     const taken = new Set(
         apps
@@ -70,7 +70,7 @@ const resolveRouteName = (appName: string, apps: SharedDevRegistration[], rootDi
 
     let candidate = sanitized;
     let index = 1;
-    while (taken.has(candidate) || candidate === "__zerux") {
+    while (taken.has(candidate) || candidate === `__${serviceName}`) {
         candidate = `${sanitized}_${index++}`;
     }
 
@@ -96,10 +96,12 @@ export const registerSharedDevApp = async (
     const port = registry.port ?? await findPort(basePort);
 
     const filteredApps = registry.apps.filter((app) => app.rootDir !== options.rootDir);
-    const routeName = resolveRouteName(options.appName, filteredApps, options.rootDir);
+    const serviceName = options.serviceName || "zdev";
+    const routeName = resolveRouteName(options.appName, filteredApps, options.rootDir, serviceName);
     const nextApp: SharedDevRegistration = {
         appName: options.appName,
         routeName,
+        serviceName,
         appPort: options.appPort,
         rootDir: options.rootDir,
         dataFilePath: options.dataFilePath ?? null,
@@ -107,6 +109,7 @@ export const registerSharedDevApp = async (
         runtimeManifestPath: options.runtimeManifestPath ?? null,
         allowedDomains: options.allowedDomains ?? [],
         allowedDevDomain: options.allowedDevDomain ?? null,
+        devtools: options.devtools ?? { modules: [] },
         startedAt: now,
         updatedAt: now
     };
@@ -121,7 +124,7 @@ export const registerSharedDevApp = async (
         allowedDevDomain: nextApp.allowedDevDomain,
         urls: {
             devtools: `http://127.0.0.1:${port}/${routeName}`,
-            websocket: `ws://127.0.0.1:${port}/__zerux/ws?app=${encodeURIComponent(routeName)}`
+            websocket: `ws://127.0.0.1:${port}/__${serviceName}/ws?app=${encodeURIComponent(routeName)}`
         }
     };
 };

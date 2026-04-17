@@ -45,7 +45,8 @@ const ensureSharedDevSockets = (server: http.Server) => {
 
     server.on("upgrade", (req, socket, head) => {
         const requestUrl = new URL(req.url || "/", "http://127.0.0.1");
-        if (requestUrl.pathname !== "/__zerux/ws") {
+        const wsMatch = requestUrl.pathname.match(/^\/__([^/]+)\/ws$/);
+        if (!wsMatch) {
             socket.destroy();
             return;
         }
@@ -167,7 +168,7 @@ const ensureSharedDevSockets = (server: http.Server) => {
 
 const createInjectedAppHandler = (
     handler: (req: any, res: any) => Promise<void>,
-    options: { routeName: string; devServerUrl: string; allowedDevDomain?: string | null; devPortLessAlias: { value: string | null | false } }
+    options: { serviceName: string; routeName: string; devServerUrl: string; allowedDevDomain?: string | null; devPortLessAlias: { value: string | null | false } }
 ) => {
     return async (req: any, res: any) => {
         if (!isPrimaryHtmlRequest(req)) {
@@ -229,6 +230,7 @@ const createInjectedAppHandler = (
 
             const html = Buffer.concat(chunks).toString("utf8");
             const transformed = injectDevClient(html, {
+                serviceName: options.serviceName,
                 routeName: options.routeName,
                 devServerUrl: options.devServerUrl,
                 allowedDevDomain: options.allowedDevDomain,
@@ -319,7 +321,7 @@ export const startServer = async (details: any) => {
         throw new Error("App func required");
     }
 
-    const service = details.service || "zerux";
+    const service = details.service || "zdev";
     const root = process.cwd();
 
     const serviceFile = getServiceFile(service);
@@ -352,23 +354,25 @@ export const startServer = async (details: any) => {
             logFilePath: details.dev.logFilePath,
             runtimeManifestPath: details.dev.runtimeManifestPath,
             allowedDomains: details.config?.server?.allowedDomains ?? details.config?.allowedDomains,
-            allowedDevDomain: details.config?.server?.allowedDevDomain ?? details.config?.allowedDevDomain
+            allowedDevDomain: details.config?.server?.allowedDevDomain ?? details.config?.allowedDevDomain,
+            serviceName: service,
+            devtools: details.config?.devtools
         });
         const sharedDevHandle = await ensureSharedDevServer(devInfo.port);
         if (sharedDevHandle) {
             ensureSharedDevSockets(sharedDevHandle.server);
         }
 
-        devAlias = await portlessAlias("zdev", devInfo.port);
+        devAlias = await portlessAlias(service, devInfo.port);
 
-        const devAliasBase = devAlias ? await portlessGet("zdev") : false;
+        const devAliasBase = devAlias ? await portlessGet(service) : false;
         const devUrls = [
             devInfo.urls.devtools,
             devInfo.urls.websocket,
             ...(devAliasBase
                 ? [
                     `${devAliasBase}/${devInfo.routeName}`,
-                    `${String(devAliasBase).replace(/^http/, "ws")}/__zerux/ws?app=${encodeURIComponent(devInfo.routeName)}`,
+                    `${String(devAliasBase).replace(/^http/, "ws")}/__${service}/ws?app=${encodeURIComponent(devInfo.routeName)}`,
                 ]
                 : [])
         ];
@@ -380,6 +384,7 @@ export const startServer = async (details: any) => {
     let appRequestHandler = details.app.func;
     if (devInfo) {
         appRequestHandler = createInjectedAppHandler(details.app.func, {
+            serviceName: service,
             routeName: devInfo.routeName,
             devServerUrl: devInfo.urls.devtools,
             allowedDevDomain: devInfo.allowedDevDomain,
@@ -448,6 +453,7 @@ export const startServer = async (details: any) => {
 
             appRequestHandler = devInfo
                 ? createInjectedAppHandler(details.app.func, {
+                    serviceName: service,
                     routeName: devInfo.routeName,
                     devServerUrl: devInfo.urls.devtools,
                     devPortLessAlias: devPortLessAlias
@@ -468,6 +474,7 @@ export const startServer = async (details: any) => {
                 await publishSharedDevEvent(devInfo.port, {
                     app: devInfo.routeName,
                     type: "hot-update",
+                    serviceName: service,
                     payload: {
                         file: event.file ?? null,
                         appUrls,

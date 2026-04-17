@@ -9,7 +9,6 @@ export default {
     script: "./assets/client.js"
   },
   server: {
-    api: "./server/api.js",
-    websocket: "./server/websocket.js"
+    api: "./server/api.js"
   }
 };

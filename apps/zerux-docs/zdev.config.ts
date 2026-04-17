@@ -8,10 +8,7 @@ const zeruxConfig: ZeruxConfig = {
         ]
     },
     "allowedDomains": ["zerux.shubkb.me"],
-    "allowedDevDomain": "zdev.shubkb.me",
-    "database": {
-        "default": "something"
-    }
+    "allowedDevDomain": "zdev.shubkb.me"
 }
 
 export default zeruxConfig;

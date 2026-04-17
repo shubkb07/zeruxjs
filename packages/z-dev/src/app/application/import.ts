@@ -7,30 +7,30 @@ const section: DevtoolsSectionDefinition = {
   order: 20,
   render({ modules }) {
     return `
-      <section class="zx-panel-stack">
-        <article class="zx-card">
-          <header class="zx-card-head">
+      <section class="zdev-panel-stack">
+        <article class="zdev-card">
+          <header class="zdev-card-head">
             <div>
-              <span class="zx-card-label">Import Graph</span>
+              <span class="zdev-card-label">Import Graph</span>
               <h3>Future Import Inspection</h3>
             </div>
           </header>
-          <p class="zx-empty">
+          <p class="zdev-empty">
             This panel is ready for dependency graph data. Use a module package to register import
             analyzers and pipe their output into the bootstrap API or peer websocket channels.
           </p>
         </article>
-        <article class="zx-card">
-          <header class="zx-card-head">
+        <article class="zdev-card">
+          <header class="zdev-card-head">
             <div>
-              <span class="zx-card-label">Module Hooks</span>
+              <span class="zdev-card-label">Module Hooks</span>
               <h3>Available Inputs</h3>
             </div>
           </header>
-          <ul class="zx-list">
-            <li>Bootstrap API helpers from <code>@zeruxjs/dev/src/api/</code></li>
-            <li>Server and peer websocket channels from <code>@zeruxjs/dev/src/api/ws.ts</code></li>
-            <li>UI module registration from <code>@zeruxjs/dev/src/module-registry.ts</code></li>
+          <ul class="zdev-list">
+            <li>Bootstrap API helpers from <code>zdev/src/api/</code></li>
+            <li>Server and peer websocket channels from <code>zdev/src/api/ws.ts</code></li>
+            <li>UI module registration from <code>zdev/src/module-registry.ts</code></li>
             <li>${modules.length ? `${modules.length} module(s) currently registered.` : "No external modules registered yet."}</li>
           </ul>
         </article>

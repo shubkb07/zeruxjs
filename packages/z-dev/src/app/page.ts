@@ -8,39 +8,39 @@ interface HomePageContext {
 }
 
 export default ({ apps, nonce }: HomePageContext) => renderDocument({
-  title: "Zerux Dev",
-  bodyClass: "zx-home",
+  title: "Zdev Hub",
+  bodyClass: "zdev-home",
   nonce,
   config: {
     page: "home",
-    apps: apps.map(app => ({ routeName: app.routeName, appName: app.appName, appPort: app.appPort, rootDir: app.rootDir }))
+    apps: apps.map(app => ({ routeName: app.routeName, appName: app.appName, appPort: app.appPort, rootDir: app.rootDir, serviceName: app.serviceName }))
   },
   content: `
-    <div class="zx-home-shell">
-      <header class="zx-home-hero">
+    <div class="zdev-home-shell">
+      <header class="zdev-home-hero">
         <div>
-          <p class="zx-eyebrow">Shared Development Surface</p>
-          <h1>Zerux Devtools Hub</h1>
-          <p class="zx-home-copy">
-            One shared dev server for every active Zerux app. Open an application workspace,
+          <p class="zdev-eyebrow">Shared Development Surface</p>
+          <h1>Zdev Hub</h1>
+          <p class="zdev-home-copy">
+            One shared dev server for every active app. Open an application workspace,
             inspect live runtime state, and extend the sidebar with new sections by dropping a file
             into <code>src/app/application/</code>.
           </p>
         </div>
-        <div class="zx-home-actions">
+        <div class="zdev-home-actions">
           ${renderThemeButton()}
         </div>
       </header>
-      <main class="zx-home-grid">
+      <main class="zdev-home-grid">
         ${apps.map((app) => `
-          <a class="zx-app-card" href="/${escapeHtml(app.routeName)}">
-            <div class="zx-app-card-head">
-              <span class="zx-app-badge">${escapeHtml(app.routeName)}</span>
-              <span class="zx-app-port">:${escapeHtml(app.appPort)}</span>
+          <a class="zdev-app-card" href="/${escapeHtml(app.routeName)}">
+            <div class="zdev-app-card-head">
+              <span class="zdev-app-badge">${escapeHtml(app.routeName)}</span>
+              <span class="zdev-app-port">:${escapeHtml(app.appPort)}</span>
             </div>
             <h2>${escapeHtml(app.appName)}</h2>
             <p>${escapeHtml(app.rootDir)}</p>
-            <div class="zx-app-meta">
+            <div class="zdev-app-meta">
               <span>Open workspace</span>
               <span>Live diagnostics</span>
             </div>

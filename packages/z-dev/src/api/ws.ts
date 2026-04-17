@@ -41,12 +41,14 @@ export const createWebSocketUrl = (options: {
     baseUrl: string;
     app: string;
     client: "devtools" | "page" | string;
+    serviceName?: string;
     identifier?: string | null;
     moduleId?: string | null;
 }) => {
     const base = new URL(options.baseUrl);
     const protocol = base.protocol === "https:" ? "wss:" : "ws:";
-    const url = new URL(`${protocol}//${base.host}/__zerux/ws`);
+    const service = options.serviceName || "zdev";
+    const url = new URL(`${protocol}//${base.host}/__${service}/ws`);
     url.searchParams.set("app", options.app);
     url.searchParams.set("client", options.client);
     if (options.identifier) {

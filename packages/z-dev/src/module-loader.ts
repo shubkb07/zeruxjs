@@ -85,9 +85,14 @@ const toHandlers = <T extends Record<string, unknown>>(value: any): T => {
 };
 
 const resolveModulePackageRoot = (appRoot: string, packageName: string) => {
-    const require = createRequire(path.join(appRoot, "package.json"));
-    const packageJsonPath = require.resolve(`${packageName}/package.json`);
-    return path.dirname(packageJsonPath);
+    try {
+        const require = createRequire(path.join(appRoot, "package.json"));
+        const packageJsonPath = require.resolve(`${packageName}/package.json`);
+        return path.dirname(packageJsonPath);
+    } catch (err) {
+        console.error(`[zdev] Failed to resolve module package root for "${packageName}" from "${appRoot}":`, err);
+        throw err;
+    }
 };
 
 const resolveModuleFile = (packageRoot: string, relativePath?: string | null) => {
@@ -107,29 +112,34 @@ const loadConfiguredModule = async (
     snapshot: SharedDevSnapshot,
     reference: string | { package: string; enabled?: boolean; options?: Record<string, unknown> }
 ): Promise<LoadedDevtoolsModule | null> => {
-    const packageName = typeof reference === "string" ? reference : reference.package;
-    if (!packageName || (typeof reference === "object" && reference.enabled === false)) {
-        return null;
-    }
-
-    try {
-        const packageRoot = resolveModulePackageRoot(app.rootDir, packageName);
-        const configPath = path.join(packageRoot, "zerux.module.config.js");
-        if (!fs.existsSync(configPath)) {
+        const packageName = typeof reference === "string" ? reference : reference.package;
+        console.log(`[zdev] Attempting to load configured module: "${packageName}"`);
+        if (!packageName || (typeof reference === "object" && reference.enabled === false)) {
             return null;
         }
 
-        const config = toModuleConfig(await importModule(configPath));
-        if (!config) {
-            return null;
-        }
+        try {
+            const packageRoot = resolveModulePackageRoot(app.rootDir, packageName);
+            console.log(`[zdev] Resolved package root for "${packageName}": ${packageRoot}`);
+            const configPath = path.join(packageRoot, "zdev.module.config.js");
+            if (!fs.existsSync(configPath)) {
+                console.warn(`[zdev] Module config not found: ${configPath}`);
+                return null;
+            }
 
-        const moduleId = sanitizeIdentifier(config.id ?? packageName.split("/").pop() ?? packageName, "module");
-        const title = String(config.title ?? moduleId);
-        const entryPath = resolveModuleFile(packageRoot, config.entry);
-        if (!entryPath) {
-            return null;
-        }
+            const config = toModuleConfig(await importModule(configPath));
+            if (!config) {
+                console.warn(`[zdev] Failed to parse module config: ${configPath}`);
+                return null;
+            }
+
+            const moduleId = sanitizeIdentifier(config.id ?? packageName.split("/").pop() ?? packageName, "module");
+            const title = String(config.title ?? moduleId);
+            const entryPath = resolveModuleFile(packageRoot, config.entry);
+            if (!entryPath) {
+                console.warn(`[zdev] Module entry not found: ${config.entry} in ${packageRoot}`);
+                return null;
+            }
 
         const entryModule = await importModule(entryPath);
         const definition = toModuleDefinition(entryModule, {
@@ -153,8 +163,8 @@ const loadConfiguredModule = async (
         const scriptPath = resolveModuleFile(packageRoot, config.assets?.script);
         const versionSuffix = typeof config.version === "string" ? `?v=${encodeURIComponent(config.version)}` : "";
         definition.assets = {
-            styleUrl: stylePath ? `/${app.routeName}/__zerux/modules/${moduleId}/style.css${versionSuffix}` : undefined,
-            scriptUrl: scriptPath ? `/${app.routeName}/__zerux/modules/${moduleId}/client.js${versionSuffix}` : undefined
+            styleUrl: stylePath ? `/${app.routeName}/__${app.serviceName}/modules/${moduleId}/style.css${versionSuffix}` : undefined,
+            scriptUrl: scriptPath ? `/${app.routeName}/__${app.serviceName}/modules/${moduleId}/client.js${versionSuffix}` : undefined
         };
         definition.meta = {
             ...definition.meta,

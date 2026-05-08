@@ -2,7 +2,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { resolvePath } from "@zeruxjs/hooks";
-import { resolveRegisteredSpecifier } from "./registry.js";
+import { resolveRegisteredSpecifier, getLoaderService } from "./registry.js";
 
 type ResolveContext = {
     parentURL?: string;
@@ -27,7 +27,8 @@ export async function resolve(
     try {
         if (specifier === "db" || specifier.startsWith("db:")) {
             const identifier = specifier === "db" ? "default" : specifier.slice(3);
-            const modulePath = path.join(process.cwd(), ".zdev", "virtual", "db", `${identifier}.mjs`);
+            const service = getLoaderService();
+            const modulePath = path.join(process.cwd(), `.${service}`, "virtual", "db", `${identifier}.mjs`);
             return nextResolve(pathToFileURL(modulePath).href, context);
         }
 

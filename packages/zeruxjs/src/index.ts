@@ -39,6 +39,11 @@ export interface ZeruxDevtoolsConfig {
     modules?: Array<string | ZeruxDevtoolsModuleConfig>;
 }
 
+export interface ZeruxWorkerConfig {
+    minThreads?: number;
+    maxThreads?: number;
+}
+
 export interface ZeruxConfig {
     type?: "fix" | "dynamic" | "function";
     entryPoint?: string;
@@ -46,6 +51,7 @@ export interface ZeruxConfig {
     structure?: ZeruxStructureConfig;
     server?: ZeruxServerConfig;
     devtools?: ZeruxDevtoolsConfig;
+    worker?: ZeruxWorkerConfig;
     allowedDomains?: string | string[];
     allowedDevDomain?: string;
     connectorManager?: string;
@@ -54,7 +60,27 @@ export interface ZeruxConfig {
     [key: string]: any;
 }
 
-export type { ZeruxPluginApi, ZeruxRequestContext } from "./bootstrap/types.js";
+export type {
+    ZeruxPluginApi,
+    ZeruxRequestContext,
+    ZeruxWorker,
+    ZeruxWorkerCleanup,
+    ZeruxWorkerContext,
+    ZeruxWorkerHandler,
+    ZeruxWorkerInput,
+    ZeruxThreadWorkerInput,
+    ZeruxThreadWorkerOptions,
+    ZeruxThreadWorkerPool,
+    ZeruxThreadWorkerTaskOptions
+} from "./bootstrap/types.js";
+export {
+    defineThreadWorker,
+    defineWorker,
+    registerThreadWorker,
+    registerWorker,
+    runWorkers,
+    ThreadWorkerPool
+} from "./bootstrap/worker.js";
 export { HttpError } from "./exceptions/http_error.js";
 export { exceptionHandler } from "./exceptions/exception_handler.js";
 export { logger, Logger } from "./bootstrap/logger.js";

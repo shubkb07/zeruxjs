@@ -27,6 +27,10 @@ interface LoadedDevtoolsModule {
     stylePath?: string;
     scriptPath?: string;
     shareWith: string[];
+    publicRoot?: string;
+    parent?: string;
+    isolated: boolean;
+    allowChildren: boolean;
 }
 
 const importModule = async <T = any>(filePath: string): Promise<T> => {
@@ -121,9 +125,17 @@ const loadConfiguredModule = async (
         try {
             const packageRoot = resolveModulePackageRoot(app.rootDir, packageName);
             console.log(`[zdev] Resolved package root for "${packageName}": ${packageRoot}`);
-            const configPath = path.join(packageRoot, "zdev.module.config.js");
-            if (!fs.existsSync(configPath)) {
-                console.warn(`[zdev] Module config not found: ${configPath}`);
+            
+            const configPath = [
+                `${app.serviceName}.module.config.ts`,
+                `${app.serviceName}.module.config.js`,
+                "zdev.module.config.ts",
+                "zdev.module.config.js"
+            ].map(file => path.join(packageRoot, file))
+             .find(file => fs.existsSync(file));
+
+            if (!configPath) {
+                console.warn(`[zdev] Module config not found for "${packageName}" (tried ${app.serviceName}.module.config and zdev.module.config)`);
                 return null;
             }
 
@@ -175,6 +187,8 @@ const loadConfiguredModule = async (
         const apiPath = resolveModuleFile(packageRoot, config.server?.api);
         const websocketPath = resolveModuleFile(packageRoot, config.server?.websocket);
 
+        const publicRoot = config.assets?.public ? path.resolve(packageRoot, config.assets.public) : undefined;
+
         return {
             definition,
             apiHandlers: apiPath ? toHandlers<DevtoolsApiModuleHandlers>(await importModule(apiPath)) : {},
@@ -183,36 +197,67 @@ const loadConfiguredModule = async (
             scriptPath: scriptPath ?? undefined,
             shareWith: Array.isArray(config.server?.shareWith)
                 ? config.server!.shareWith.filter((item): item is string => typeof item === "string").map((item) => sanitizeIdentifier(item, item))
-                : []
+                : [],
+            publicRoot: publicRoot && fs.existsSync(publicRoot) ? publicRoot : undefined,
+            parent: (config as any).parent || (config.meta as any)?.parent,
+            isolated: !!config.server?.isolated,
+            allowChildren: !!config.server?.allowChildren
         };
     } catch {
         return null;
     }
 };
 
+const moduleCache = new Map<string, { timestamp: number; modules: LoadedDevtoolsModule[] }>();
+
 export const loadAppDevtoolsModules = async (app: SharedDevRegistration, snapshot: SharedDevSnapshot) => {
+    const cacheKey = app.routeName;
+    const cached = moduleCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < 2000) {
+        return cached.modules;
+    }
+
     const configured = await Promise.all(
         snapshot.devtools.modules.map((reference) => loadConfiguredModule(app, snapshot, reference))
     );
 
-    const loaded = [
-        ...getRegisteredDevtoolsModules().map((definition) => ({
-            definition,
-            apiHandlers: {},
-            socketHandlers: {},
-            shareWith: []
-        })),
-        ...configured.filter((module): module is LoadedDevtoolsModule => Boolean(module))
-    ];
-
     const unique = new Map<string, LoadedDevtoolsModule>();
-    for (const module of loaded) {
-        unique.set(module.definition.id, module);
-    }
 
-    return [...unique.values()].sort((left, right) =>
+    getRegisteredDevtoolsModules().forEach((definition) => {
+        unique.set(definition.id, {
+            definition,
+            apiHandlers: {} as DevtoolsApiModuleHandlers,
+            socketHandlers: {} as DevtoolsSocketModuleHandlers,
+            shareWith: [],
+            isolated: false,
+            stylePath: undefined,
+            scriptPath: undefined,
+            publicRoot: undefined,
+            parent: undefined,
+            allowChildren: true
+        });
+    });
+
+    configured.filter((item): item is LoadedDevtoolsModule => item !== null).forEach((item) => {
+        unique.set(item.definition.id, item);
+    });
+
+    const rawLoaded = [...unique.values()];
+
+    const loaded = rawLoaded.filter((module) => {
+        if (!module.parent) return true;
+        const parentModule = rawLoaded.find((other) => other.definition.id === module.parent);
+        if (!parentModule) return false;
+        
+        // If parent exists, check if it allows children
+        return parentModule.allowChildren !== false;
+    });
+
+    const result = loaded.sort((left, right) =>
         left.definition.title.localeCompare(right.definition.title)
     );
+    moduleCache.set(cacheKey, { timestamp: Date.now(), modules: result });
+    return result;
 };
 
 export const loadApplicationSections = async (
@@ -243,11 +288,14 @@ export const loadApplicationSections = async (
     };
 };
 
-const canAccessModule = (fromModuleId: string | undefined, target: LoadedDevtoolsModule) =>
-    !fromModuleId ||
-    fromModuleId === target.definition.id ||
-    target.definition.dependencies?.includes(fromModuleId) ||
-    target.shareWith.includes(fromModuleId);
+const canAccessModule = (fromModuleId: string | undefined, target: LoadedDevtoolsModule) => {
+    if (!fromModuleId) return true; // Framework access
+    if (fromModuleId === target.definition.id) return true; // Self access
+    if (target.isolated) return false; // Isolated modules only allow self/framework
+    
+    return target.definition.dependencies?.includes(fromModuleId) ||
+           target.shareWith.includes(fromModuleId);
+};
 
 export const resolveModuleApiRequest = async (options: {
     app: SharedDevRegistration;
@@ -265,12 +313,38 @@ export const resolveModuleApiRequest = async (options: {
         return null;
     }
 
-    const handler = target.apiHandlers[options.handlerName];
-    if (!handler) {
+    // Check for child overrides or extensions
+    const children = loadedModules.filter((m) => m.parent === target.definition.id);
+    const hijacker = children.find((child) => child.apiHandlers[options.handlerName]);
+
+    const baseHandler = target.apiHandlers[options.handlerName];
+
+    if (hijacker) {
+        const handler = hijacker.apiHandlers[options.handlerName];
+        return handler({
+            app: options.app,
+            snapshot: options.snapshot,
+            identifier: options.identifier,
+            request: options.request,
+            body: options.body,
+            module: hijacker.definition,
+            parentHandler: baseHandler ? async (ctx) => await baseHandler({
+                app: options.app,
+                snapshot: options.snapshot,
+                identifier: options.identifier,
+                request: options.request,
+                body: options.body,
+                module: target.definition,
+                ...ctx
+            }) : undefined
+        });
+    }
+
+    if (!baseHandler) {
         return null;
     }
 
-    return handler({
+    return baseHandler({
         app: options.app,
         snapshot: options.snapshot,
         identifier: options.identifier,
@@ -296,12 +370,38 @@ export const resolveModuleSocketRequest = async (options: {
         return null;
     }
 
-    const handler = target.socketHandlers[options.channel];
-    if (!handler) {
+    // Check for child overrides or extensions
+    const children = loadedModules.filter((m) => m.parent === target.definition.id);
+    const hijacker = children.find((child) => child.socketHandlers[options.channel]);
+
+    const baseHandler = target.socketHandlers[options.channel];
+
+    if (hijacker) {
+        const handler = hijacker.socketHandlers[options.channel];
+        return handler({
+            app: options.app,
+            snapshot: options.snapshot,
+            identifier: options.identifier,
+            clientType: options.clientType,
+            payload: options.payload,
+            module: hijacker.definition,
+            parentHandler: baseHandler ? async (ctx) => await baseHandler({
+                app: options.app,
+                snapshot: options.snapshot,
+                identifier: options.identifier,
+                clientType: options.clientType,
+                payload: options.payload,
+                module: target.definition,
+                ...ctx
+            }) : undefined
+        });
+    }
+
+    if (!baseHandler) {
         return null;
     }
 
-    return handler({
+    return baseHandler({
         app: options.app,
         snapshot: options.snapshot,
         identifier: options.identifier,
@@ -326,4 +426,22 @@ export const readModuleAsset = async (
     }
 
     return fs.readFileSync(targetPath);
+};
+
+export const readModulePublicAsset = async (
+    app: SharedDevRegistration,
+    snapshot: SharedDevSnapshot,
+    moduleId: string,
+    assetPath: string
+) => {
+    const loadedModules = await loadAppDevtoolsModules(app, snapshot);
+    const target = loadedModules.find((module) => module.definition.id === moduleId);
+    if (!target || !target.publicRoot) return null;
+
+    const absolutePath = path.join(target.publicRoot, assetPath);
+    if (!ensurePathInsideRoot(target.publicRoot, absolutePath) || !fs.existsSync(absolutePath)) {
+        return null;
+    }
+
+    return fs.readFileSync(absolutePath);
 };

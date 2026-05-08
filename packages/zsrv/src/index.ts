@@ -274,7 +274,7 @@ const readJSON = (file: string) => {
     try {
         return JSON.parse(fs.readFileSync(file, "utf8"));
     } catch {
-        return {};
+        return [];
     }
 };
 

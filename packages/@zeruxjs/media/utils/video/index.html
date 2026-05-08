@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>ZeruxJS Premium Video Player</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0a0a0a;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+        }
+        .player-wrapper {
+            width: 100%;
+            max-width: 1000px;
+            aspect-ratio: 16/9;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+        }
+        h1 {
+            margin-bottom: 30px;
+            font-weight: 300;
+            letter-spacing: -1px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ZeruxJS Video Player</h1>
+    
+    <div class="player-wrapper">
+        <video id="premium-player"></video>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const playlist = [
+                "video.mp4.1280-720.mp4",
+                "video.webm.1280-720.webm",
+                "video.mp4.640-360.mp4"
+            ];
+
+            videoPlayer.addPlayerBySelector("#premium-player", {
+                playList: playlist,
+                src: playlist[0],
+                autoPlay: false,
+                chapters: [
+                    { time: 0, title: "Introduction" },
+                    { time: 5, title: "Getting Started" },
+                    { time: 15, title: "Deep Dive" },
+                    { time: 25, title: "Conclusion" }
+                ]
+            });
+        });
+    </script>
+</body>
+</html>

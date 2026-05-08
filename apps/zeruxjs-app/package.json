@@ -17,7 +17,11 @@
     "build": "zerux build",
     "dev": "zerux dev -p 3010",
     "start": "zerux start",
-    "meow": "zerux meow"
+    "meow": "zerux meow",
+    "ds:start": "SESSION=$(node -p \"require('./package.json').name.replace(/[@/]/g,'-')\") && tmux has-session -t \"$SESSION\" 2>/dev/null || tmux new-session -d -s \"$SESSION\" \"npm run start\"",
+    "de:start": "SESSION=$(node -p \"require('./package.json').name.replace(/[@/]/g,'-')\") && tmux kill-session -t \"$SESSION\" 2>/dev/null || true",
+    "ds:dev": "SESSION=$(node -p \"require('./package.json').name.replace(/[@/]/g,'-')\") && tmux has-session -t \"$SESSION\" 2>/dev/null || tmux new-session -d -s \"$SESSION\" \"npm run dev\"",
+    "de:dev": "SESSION=$(node -p \"require('./package.json').name.replace(/[@/]/g,'-')\") && tmux kill-session -t \"$SESSION\" 2>/dev/null || true"
   },
   "homepage": "https://github.com/zeruxjs/zeruxjs#readme",
   "bugs": {

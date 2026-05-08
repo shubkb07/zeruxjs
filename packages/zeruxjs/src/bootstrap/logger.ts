@@ -37,11 +37,11 @@ function format(level: LogLevel, message: string, ...args: unknown[]): string {
 export class Logger {
   private readonly filePath: string;
   private readonly fileLevel: LogLevel;
-  private readonly stream: WriteStream | null;
+  private stream: WriteStream | null;
 
   constructor(options: LoggerOptions = {}) {
     // Resolve log file location
-    const defaultPath = join(process.cwd(), ".zdev", "log", "app.log");
+    const defaultPath = join(process.cwd(), ".zerux", "log", "app.log");
     this.filePath = options.filePath ?? process.env.ZERUX_LOG_PATH ?? defaultPath;
     this.fileLevel = options.fileLevel ?? "debug";
 
@@ -101,6 +101,29 @@ export class Logger {
   /** Log an error. */
   error(message: string, ...args: unknown[]): void {
     this.write("error", message, ...args);
+  }
+
+  /** Relocates the log file to a new directory. */
+  relocate(directory: string): void {
+    const newPath = join(directory, "log", "app.log");
+    if (this.filePath === newPath) return;
+
+    // Close current stream
+    if (this.stream) {
+      this.stream.end();
+    }
+
+    // Update path
+    (this as any).filePath = newPath;
+
+    // Ensure directory exists
+    const dir = dirname(this.filePath);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+
+    // Open new stream
+    this.stream = createWriteStream(this.filePath, { flags: 'a' });
   }
 
   getFilePath(): string {

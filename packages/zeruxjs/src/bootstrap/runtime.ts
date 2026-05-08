@@ -21,6 +21,7 @@ import type {
 } from "./types.js";
 import { logger } from "./logger.js";
 import { isAllowedHost } from "../utils/host.js";
+import { normalizeThreadWorker, normalizeWorker, ThreadWorkerPool } from "./worker.js";
 
 type HttpMethod = "ALL" | "DELETE" | "GET" | "HEAD" | "OPTIONS" | "PATCH" | "POST" | "PUT";
 
@@ -380,6 +381,9 @@ const createRuntime = async (
     const middleware = new Map<string, MiddlewareFunction>();
     const controllers = new Map<string, unknown>();
     const composables = new Map<string, unknown>();
+    const workers = new Map<string, ReturnType<typeof normalizeWorker>>();
+    const workerState = new Map<string, unknown>();
+    const threadWorkers = new Map<string, ThreadWorkerPool>();
     const routes: DiscoveredRoute[] = [];
     const publicFiles = collectPublicFiles(rootDir, structure.publicDirs);
 
@@ -458,6 +462,38 @@ const createRuntime = async (
         removeMiddleware(name) {
             middleware.delete(name);
         },
+        addWorker(name, worker) {
+            workers.set(name, normalizeWorker(name, worker));
+        },
+        removeWorker(name) {
+            workers.delete(name);
+        },
+        getWorker(name) {
+            return workers.get(name);
+        },
+        getWorkers() {
+            return [...workers.values()];
+        },
+        addThreadWorker(name, worker) {
+            const normalizedWorker = normalizeThreadWorker(name, worker);
+            threadWorkers.set(name, new ThreadWorkerPool({
+                rootDir,
+                mode,
+                config,
+                logger,
+                serviceName: structure.serviceName,
+                worker: normalizedWorker
+            }));
+        },
+        removeThreadWorker(name) {
+            threadWorkers.delete(name);
+        },
+        getThreadWorker(name) {
+            return threadWorkers.get(name);
+        },
+        getThreadWorkers() {
+            return [...threadWorkers.values()];
+        },
         setComposable(name, value) {
             composables.set(name, value);
         },
@@ -523,6 +559,9 @@ const createRuntime = async (
         middleware,
         controllers,
         composables,
+        workers,
+        workerState,
+        threadWorkers,
         routes,
         publicFiles,
         entryModulePath,
@@ -533,7 +572,7 @@ const createRuntime = async (
                 const allowedDevDomain = config.server?.allowedDevDomain ?? config.allowedDevDomain;
 
                 if (!isAllowedHost(host, allowedDomains, allowedDevDomain)) {
-                    const message = `Access from unallowed host "${host}" is restricted. Please add it to "allowedDomains" in your zdev.config.ts if this is intended.`;
+                    const message = `Access from unallowed host "${host}" is restricted. Please add it to "allowedDomains" in your zerux.config.ts if this is intended.`;
                     if (mode === "dev") {
                         logger.error(message);
                         sendResponse(res, { error: "Unallowed Host", message }, 400);
@@ -653,6 +692,16 @@ const createRuntime = async (
                 middleware: [...middleware.keys()].sort(),
                 controllers: [...controllers.keys()].sort(),
                 composables: [...composables.keys()].sort(),
+                workers: [...workers.values()].map((worker) => ({
+                    name: worker.name,
+                    meta: worker.meta
+                })),
+                threadWorkers: [...threadWorkers.values()].map((worker) => ({
+                    name: worker.name,
+                    size: worker.size,
+                    minThreads: worker.minThreads,
+                    maxThreads: worker.maxThreads
+                })),
                 routes: routes.map((route) => ({
                     id: route.id,
                     path: route.pattern,

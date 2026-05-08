@@ -1,7 +1,9 @@
 import { register } from "node:module";
+import { setLoaderService } from "./registry.js";
 
+export const registerLoader = (serviceName = "zerux") => {
+    setLoaderService(serviceName);
 
-export const registerLoader = () => {
     // IMPORTANT: resolve relative to THIS FILE, not cwd
     const loaderUrl = new URL("./loader.js", import.meta.url);
     try {

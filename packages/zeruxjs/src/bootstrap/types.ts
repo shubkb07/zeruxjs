@@ -14,6 +14,60 @@ export type RouteHandler = (
     context: ZeruxRequestContext
 ) => Promise<unknown> | unknown;
 
+export type ZeruxWorkerCleanup = () => Promise<void> | void;
+
+export interface ZeruxWorkerContext {
+    runtime: ZeruxRuntime;
+    mode: RuntimeMode;
+    config: ZeruxConfig;
+    structure: ResolvedStructure;
+    logger: Logger;
+    env: NodeJS.ProcessEnv;
+    state: Map<string, unknown>;
+}
+
+export type ZeruxWorkerHandler = (
+    context: ZeruxWorkerContext
+) => Promise<ZeruxWorkerCleanup | void> | ZeruxWorkerCleanup | void;
+
+export interface ZeruxWorker {
+    name: string;
+    start: ZeruxWorkerHandler;
+    meta?: Record<string, unknown>;
+}
+
+export type ZeruxWorkerInput = ZeruxWorkerHandler | Partial<ZeruxWorker> & {
+    handler?: ZeruxWorkerHandler;
+};
+
+export interface ZeruxThreadWorkerOptions {
+    name?: string;
+    script: string | URL;
+    minThreads?: number;
+    maxThreads?: number;
+    workerData?: unknown;
+    meta?: Record<string, unknown>;
+}
+
+export type ZeruxThreadWorkerInput = string | URL | ZeruxThreadWorkerOptions;
+
+export interface ZeruxThreadWorkerTaskOptions {
+    timeoutMs?: number;
+}
+
+export interface ZeruxThreadWorkerPool {
+    readonly name: string;
+    readonly size: number;
+    readonly minThreads: number;
+    readonly maxThreads: number;
+    start(): void;
+    run<TPayload = unknown, TResult = unknown>(
+        payload: TPayload,
+        options?: ZeruxThreadWorkerTaskOptions
+    ): Promise<TResult>;
+    stop(): Promise<void>;
+}
+
 export interface LoadedModule<T = unknown> {
     key: string;
     absolutePath: string;
@@ -56,6 +110,14 @@ export interface ZeruxPluginApi {
     removeRoute(pattern: string, method?: string): void;
     addMiddleware(name: string, middleware: MiddlewareFunction): void;
     removeMiddleware(name: string): void;
+    addWorker(name: string, worker: ZeruxWorkerInput): void;
+    removeWorker(name: string): void;
+    getWorker(name: string): ZeruxWorker | undefined;
+    getWorkers(): ZeruxWorker[];
+    addThreadWorker(name: string, worker: ZeruxThreadWorkerInput): void;
+    removeThreadWorker(name: string): void;
+    getThreadWorker(name: string): ZeruxThreadWorkerPool | undefined;
+    getThreadWorkers(): ZeruxThreadWorkerPool[];
     setComposable(name: string, value: unknown): void;
     setController(name: string, value: unknown): void;
     getConfig(): ZeruxConfig;
@@ -74,6 +136,7 @@ export interface RegisteredRouteInput {
 export interface ResolvedStructure {
     mode: "fix" | "dynamic" | "function";
     rootDir: string;
+    serviceName: string;
     entryPointName: string;
     appDir: string | null;
     middlewareDirs: string[];
@@ -102,6 +165,9 @@ export interface ZeruxRuntime {
     middleware: Map<string, MiddlewareFunction>;
     controllers: Map<string, unknown>;
     composables: Map<string, unknown>;
+    workers: Map<string, ZeruxWorker>;
+    workerState: Map<string, unknown>;
+    threadWorkers: Map<string, ZeruxThreadWorkerPool>;
     routes: DiscoveredRoute[];
     publicFiles: Map<string, string>;
     entryModulePath: string | null;

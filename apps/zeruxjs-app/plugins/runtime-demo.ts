@@ -1,4 +1,31 @@
-export default (api: any) => {
+import { defineThreadWorker, defineWorker, type ZeruxPluginApi } from "zeruxjs";
+
+export default (api: ZeruxPluginApi) => {
+  api.addThreadWorker("math-thread", defineThreadWorker("math-thread", "workers/math-thread.ts"));
+
+  api.addWorker("sample-heartbeat", defineWorker("sample-heartbeat", ({ logger, state }) => {
+    state.set("sample-heartbeat", {
+      startedAt: new Date().toISOString(),
+      ticks: 0
+    });
+
+    const timer = setInterval(() => {
+      const current = state.get("sample-heartbeat") as { startedAt: string; ticks: number } | undefined;
+      state.set("sample-heartbeat", {
+        startedAt: current?.startedAt ?? new Date().toISOString(),
+        ticks: (current?.ticks ?? 0) + 1,
+        lastTickAt: new Date().toISOString()
+      });
+    }, 5000);
+
+    logger.info("Sample heartbeat worker registered before HTTP server startup");
+
+    return () => {
+      clearInterval(timer);
+      logger.info("Sample heartbeat worker cleanup complete");
+    };
+  }));
+
   api.addMiddleware("plugin-tag", async (context: any, next: () => Promise<void>) => {
     context.state.middleware = [...(context.state.middleware ?? []), "plugin-tag"];
     await next();
@@ -44,6 +71,31 @@ export default (api: any) => {
           </section>
         </body>
       </html>`;
+    }
+  });
+
+  api.addRoute({
+    pattern: "/plugin/workers",
+    method: "GET",
+    middleware: ["request-context", "plugin-tag"],
+    async handler(context: any) {
+      const mathThread = context.runtime.asPluginApi().getThreadWorker("math-thread");
+      const mathResult = mathThread
+        ? await mathThread.run({ value: 12 })
+        : null;
+
+      return {
+        workers: context.runtime.asPluginApi().getWorkers().map((worker: any) => worker.name),
+        threadWorkers: context.runtime.asPluginApi().getThreadWorkers().map((worker: any) => ({
+          name: worker.name,
+          size: worker.size,
+          minThreads: worker.minThreads,
+          maxThreads: worker.maxThreads
+        })),
+        heartbeat: context.runtime.workerState.get("sample-heartbeat"),
+        mathResult,
+        middleware: context.state.middleware
+      };
     }
   });
 };

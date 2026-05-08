@@ -20,12 +20,15 @@ export interface DevtoolsSectionDefinition {
 export interface DevtoolsModuleAssetConfig {
     style?: string;
     script?: string;
+    public?: string;
 }
 
 export interface DevtoolsModuleServerConfig {
     api?: string;
     websocket?: string;
     shareWith?: string[];
+    isolated?: boolean;
+    allowChildren?: boolean;
 }
 
 export interface DevtoolsModuleConfig {
@@ -55,6 +58,7 @@ export interface DevtoolsModuleDefinition {
         scriptUrl?: string;
     };
     meta?: Record<string, unknown>;
+    allowChildren?: boolean;
 }
 
 export type DevtoolsApiModuleHandlers = Record<string, (context: {
@@ -64,6 +68,8 @@ export type DevtoolsApiModuleHandlers = Record<string, (context: {
     request: import("node:http").IncomingMessage;
     body: unknown;
     module: DevtoolsModuleDefinition;
+    parentResult?: any;
+    parentHandler?: (ctx: any) => Promise<any>;
 }) => Promise<unknown> | unknown>;
 
 export type DevtoolsSocketModuleHandlers = Record<string, (context: {
@@ -73,6 +79,8 @@ export type DevtoolsSocketModuleHandlers = Record<string, (context: {
     clientType?: string;
     payload?: Record<string, unknown>;
     module: DevtoolsModuleDefinition;
+    parentResult?: any;
+    parentHandler?: (ctx: any) => Promise<any>;
 }) => Promise<unknown> | unknown>;
 
 const modules = new Map<string, DevtoolsModuleDefinition>();

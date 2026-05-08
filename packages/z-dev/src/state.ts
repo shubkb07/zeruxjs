@@ -52,12 +52,12 @@ export const normalizeSnapshot = (
             ? snapshot.routes as Array<{ path: string; methods: string[] }>
             : [],
         devtools: {
-            modules: [
+            modules: [...new Set([
                 ...app.devtools.modules,
                 ...(Array.isArray((snapshot as { devtools?: { modules?: unknown[] } }).devtools?.modules)
-                    ? (snapshot as { devtools?: { modules?: Array<string | { package: string; enabled?: boolean; options?: Record<string, unknown> }> } }).devtools!.modules!
+                    ? (snapshot as { devtools?: { modules?: Array<string | { package: string; enabled?: boolean; options?: Record<string, unknown> }> } }).devtools!.modules!.map(m => typeof m === "string" ? m : m.package)
                     : [])
-            ]
+            ])]
         },
         clientEvents,
         logs: readTailLines(app.logFilePath)

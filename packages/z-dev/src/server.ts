@@ -1,10 +1,11 @@
 import http, { type IncomingMessage, type ServerResponse } from "node:http";
+import path from "node:path";
 import { URL } from "node:url";
 
 import { buildContentSecurityPolicy } from "@zeruxjs/security";
 
 import { createDocumentSecurity } from "./components/document.js";
-import { readModuleAsset, resolveModuleApiRequest, resolveModuleSocketRequest } from "./module-loader.js";
+import { readModuleAsset, readModulePublicAsset, resolveModuleApiRequest, resolveModuleSocketRequest } from "./module-loader.js";
 import { readDevAsset, renderApplicationPage, renderHomePage, resolveCustomApiHandler, loadApplicationSections } from "./render.js";
 import { appendSnapshotEvent, normalizeSnapshot } from "./state.js";
 import { getRegistryApp, readRegistry, readSharedDevRouteName, registerSharedDevApp, unregisterSharedDevApp, isPortFree, findPort, writeRegistry } from "./registry.js";
@@ -323,6 +324,35 @@ const handleHttpRequest = async (req: IncomingMessage, res: ServerResponse) => {
             asset,
             assetName === "style.css" ? "text/css; charset=utf-8" : "text/javascript; charset=utf-8"
         );
+        return;
+    }
+
+    const modulePublicMatch = remainingPath.match(/^\/__([^/]+)\/modules\/([^/]+)\/public\/(.+)$/);
+    if (modulePublicMatch && req.method === "GET") {
+        const [, serviceName, moduleId, assetPath] = modulePublicMatch;
+        if (serviceName !== app.serviceName) {
+            sendJson(res, { message: "Service mismatch" }, 403);
+            return;
+        }
+        const asset = await readModulePublicAsset(app, snapshot, moduleId, assetPath);
+        if (!asset) {
+            sendJson(res, { message: "Asset not found" }, 404);
+            return;
+        }
+
+        const ext = path.extname(assetPath).toLowerCase();
+        const mimes: Record<string, string> = {
+            ".js": "text/javascript; charset=utf-8",
+            ".css": "text/css; charset=utf-8",
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".gif": "image/gif",
+            ".svg": "image/svg+xml",
+            ".json": "application/json; charset=utf-8",
+            ".html": "text/html; charset=utf-8"
+        };
+        sendBuffer(res, asset, mimes[ext] || "application/octet-stream");
         return;
     }
 

@@ -35,14 +35,10 @@ export const resolveDefaultEnvFiles = (rootDir: string, mode: RuntimeMode): stri
 
 export const loadConfig = async (rootDir: string, mode: RuntimeMode): Promise<ZeruxConfig> => {
     const configPath = findExistingFile(rootDir, [
-        "zdev.config.ts",
-        "zdev.config.js",
-        "zdev.config.mjs",
-        "zdev.config.cjs",
-        "zdev.config.ts",
-        "zdev.config.js",
-        "zdev.config.mjs",
-        "zdev.config.cjs"
+        "zerux.config.ts",
+        "zerux.config.js",
+        "zerux.config.mjs",
+        "zerux.config.cjs"
     ]);
 
     if (!configPath) {
@@ -50,12 +46,13 @@ export const loadConfig = async (rootDir: string, mode: RuntimeMode): Promise<Ze
     }
 
     const loaded = await importModule(configPath, mode);
-    return (loaded.default || loaded.zdevConfig || loaded) as ZeruxConfig;
+    return (loaded.default || loaded.zeruxConfig || loaded.zdevConfig || loaded) as ZeruxConfig;
 };
 
 export const resolveStructure = (
     rootDir: string,
-    config: ZeruxConfig
+    config: ZeruxConfig,
+    serviceName = "zerux"
 ): ResolvedStructure => {
     const mode = config.type ?? "fix";
     const structure = {
@@ -73,6 +70,7 @@ export const resolveStructure = (
     return {
         mode,
         rootDir,
+        serviceName,
         entryPointName: config.entryPoint ?? "index",
         appDir: structure.app ? path.resolve(rootDir, structure.app) : null,
         middlewareDirs: uniquePaths(rootDir, asArray(structure.middleware)),
@@ -81,7 +79,7 @@ export const resolveStructure = (
         pluginDirs: uniquePaths(rootDir, asArray(structure.plugins)),
         publicDirs: uniquePaths(rootDir, asArray(structure.public)),
         envFiles,
-        outputDir: path.resolve(rootDir, config.outDir ?? ".zdev"),
+        outputDir: path.resolve(rootDir, config.outDir ?? `.${serviceName}`),
         raw: structure
     };
 };

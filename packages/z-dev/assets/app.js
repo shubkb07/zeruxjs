@@ -201,12 +201,16 @@ const renderDiagnostics = (snapshot) => {
   }
 };
 
-const createModuleApi = (moduleId) => async (name, options = {}) => {
+const callModuleApi = async (moduleId, name, options = {}) => {
   const url = new URL(`/${applicationState.app}/__${window.zdev.service}/modules/${moduleId}/api/${name}`, window.location.origin);
   if (applicationState.identifier) {
     url.searchParams.set("identifier", applicationState.identifier);
   }
-  url.searchParams.set("requester", moduleId);
+  if (options.requester) {
+    url.searchParams.set("requester", options.requester);
+  } else {
+    url.searchParams.set("requester", moduleId);
+  }
   const method = options.method || "POST";
   const response = await fetch(url, {
     method,
@@ -217,6 +221,10 @@ const createModuleApi = (moduleId) => async (name, options = {}) => {
   });
   return response.json();
 };
+
+const createModuleApi = (moduleId) => (name, options = {}) => callModuleApi(moduleId, name, { ...options, requester: moduleId });
+
+window.zdev.api = callModuleApi;
 
 const createDevtoolsSocket = () => {
   const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";

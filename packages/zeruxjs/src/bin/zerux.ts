@@ -14,13 +14,14 @@ const addCommands = () => {
         "zerux",
         "dev",
         async (args) => {
-            registerLoader();
-            await server('dev', args);
+            const serviceName = "zerux";
+            registerLoader(serviceName);
+            await server('dev', { ...args, serviceName });
         },
         {
             description: "Start development server",
             docs: "Runs the development server with hot reload support.",
-            example: "npx zdev dev"
+            example: "npx zerux dev"
         }
     );
 
@@ -28,13 +29,14 @@ const addCommands = () => {
         "zerux",
         "start",
         async (args) => {
-            registerLoader();
-            await server('start', args);
+            const serviceName = "zerux";
+            registerLoader(serviceName);
+            await server('start', { ...args, serviceName });
         },
         {
             description: "Start production server",
             docs: "Runs the built application in production mode.",
-            example: "npx zdev start"
+            example: "npx zerux start"
         }
     );
 
@@ -47,7 +49,7 @@ const addCommands = () => {
         {
             description: "Build the project",
             docs: "Compiles the project for production deployment.",
-            example: "npx zdev build"
+            example: "npx zerux build"
         }
     );
 
@@ -104,7 +106,7 @@ const addCommands = () => {
             {
                 description: `Run ${command}`,
                 docs: `Executes ${command} with optional flags like :fix and :watch.`,
-                example: `npx zdev ${command}`
+                example: `npx zerux ${command}`
             }
         );
     }

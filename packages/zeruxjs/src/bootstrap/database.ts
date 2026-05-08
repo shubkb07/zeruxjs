@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { ZeruxConfig } from "../index.js";
-import { register, unregister } from "../loader/registry.js";
+import { register, unregister, getLoaderService } from "../loader/registry.js";
 
 type DatabaseModuleNamespace = {
     default?: unknown;
@@ -74,26 +74,26 @@ const DB_FACADE_EXPORT_KEYS = [
     "native"
 ] as const;
 
-const DB_VIRTUAL_DIR = path.join(process.cwd(), ".zdev", "virtual", "db");
+const getDbVirtualDir = () => path.join(process.cwd(), `.${getLoaderService()}`, "virtual", "db");
 const RESERVED_EXPORT_NAMES = new Set(["delete"]);
 
 const ensureVirtualDbDir = () => {
-    fs.mkdirSync(DB_VIRTUAL_DIR, { recursive: true });
+    fs.mkdirSync(getDbVirtualDir(), { recursive: true });
 };
 
 const writeVirtualDbModule = (fileName: string, source: string) => {
     ensureVirtualDbDir();
-    fs.writeFileSync(path.join(DB_VIRTUAL_DIR, fileName), source, "utf8");
+    fs.writeFileSync(path.join(getDbVirtualDir(), fileName), source, "utf8");
 };
 
 const writeVirtualDbTypes = (fileName: string, source: string) => {
     ensureVirtualDbDir();
-    fs.writeFileSync(path.join(DB_VIRTUAL_DIR, fileName), source, "utf8");
+    fs.writeFileSync(path.join(getDbVirtualDir(), fileName), source, "utf8");
 };
 
 const appendExportBinding = (lines: string[], exportName: string, expression: string) => {
     if (RESERVED_EXPORT_NAMES.has(exportName)) {
-        const localName = `__zdev_${exportName}`;
+        const localName = `__${getLoaderService()}_${exportName}`;
         lines.push(`const ${localName} = ${expression};`);
         lines.push(`export { ${localName} as ${exportName} };`);
         return;
@@ -104,7 +104,7 @@ const appendExportBinding = (lines: string[], exportName: string, expression: st
 
 const appendExportDeclaration = (lines: string[], exportName: string, typeExpression: string) => {
     if (RESERVED_EXPORT_NAMES.has(exportName)) {
-        const localName = `__zdev_${exportName}`;
+        const localName = `__${getLoaderService()}_${exportName}`;
         lines.push(`declare const ${localName}: ${typeExpression};`);
         lines.push(`export { ${localName} as ${exportName} };`);
         return;

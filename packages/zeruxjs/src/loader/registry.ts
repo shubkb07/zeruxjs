@@ -8,6 +8,15 @@ type LoaderModuleStore = Map<string, Record<string, unknown>>;
 
 const RESOLVER_SYMBOL = Symbol.for("zerux.loader.resolvers");
 const MODULE_SYMBOL = Symbol.for("zerux.loader.modules");
+const SERVICE_SYMBOL = Symbol.for("zerux.loader.service");
+
+let currentService = "zerux";
+
+export const setLoaderService = (name: string) => {
+    currentService = name;
+};
+
+export const getLoaderService = () => currentService;
 
 const EXPORTABLE_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
